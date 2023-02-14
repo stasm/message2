@@ -1,0 +1,27 @@
+{
+  "t-shirt": {
+    "singular_nominative": "T-shirt",
+    "singular_genitive": "T-shirt's",
+    "plural_nominative": "T-shirts",
+    "plural_genitive": "T-shirts'"
+  },
+  "red": {
+    "nominative": "red",
+    "genitive": "red's"
+  },
+  "actor_dinosaur": {
+    "definite": "the dinosaur",
+    "indefinite": "a dinosaur",
+    "bare": "dinosaur"
+  },
+  "actor_elephant": {
+    "definite": "the elephant",
+    "indefinite": "an elephant",
+    "bare": "elephant"
+  },
+  "actor_ogre": {
+    "definite": "the ogre",
+    "indefinite": "an ogre",
+    "bare": "ogre"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "name": "@stasm/message2",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Experimental implementation of MessageFormat 2.0",
+  "type": "module",
+  "devDependencies": {
+    "@types/node": "18",
+    "@types/tap": "15",
+    "tap": "16.3",
+    "typescript": "4.9"
+  },
+  "scripts": {
+    "test": "tsc && tap example/example_*.js"
+  },
+  "author": "Stanisław Małolepszy <sta@malolepszy.org>",
+  "license": "ISC"
+}

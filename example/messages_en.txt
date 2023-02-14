@@ -1,0 +1,26 @@
+accord-adjective-with-item =
+	"The {NOUN $item} is {ADJECTIVE $color}."
+
+flat-variants [PLURAL $photoCount : other, CHOOSE $userGender : other] =
+	[one, masculine] "{$userName} added a new photo to his album."
+	[one, feminine] "{$userName} added a new photo to her album."
+	[one, other] "{$userName} added a new photo to their album."
+	[other, masculine] "{$userName} added {$photoCount} new photos to his album."
+	[other, feminine] "{$userName} added {$photoCount} new photos to her album."
+	[other, other] "{$userName} added {$photoCount} new photos to their album."
+
+nested-phrases =
+	"{$userName} {PHRASE added-photo} to {PHRASE their-album}."
+nested-phrases.added-photo [PLURAL $photoCount : other] =
+	[one] "added a new photo"
+	[other] "added {$photoCount} new photos"
+nested-phrases.their-album [$userGender : other] =
+	[masculine] "his album"
+	[feminine] "her album"
+	[other] "their album"
+
+you-see =
+	"You see {ACTOR $monster INDEFINITE}!"
+
+they-wave =
+	"{ACTOR $monster DEFINITE CAPITALIZED} waves at you!"

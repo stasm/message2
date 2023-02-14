@@ -1,0 +1,19 @@
+accord-adjective-with-item =
+	"{NOUN $item CAPITALIZED} jest {ADJECTIVE $color ACCORD_WITH $item}."
+
+flat-variants [PLURAL $photoCount : other, CHOOSE $userGender : many] =
+	[one, masculine] "{$userName} dodał nowe zdjęcie do swojego albumu."
+	[one, feminine] "{$userName} dodała nowe zdjęcie do swojego albumu."
+	[one, other] "Użytkownik {$userName} dodał nowe zdjęcie do swojego albumu."
+	[few, masculine] "{$userName} dodał {$photoCount} nowe zdjęcia do swojego albumu."
+	[few, feminine] "{$userName} dodała {$photoCount} nowe zdjęcia do swojego albumu."
+	[few, other] "Użytkownik {$userName} dodał {$photoCount} nowe zdjęcia do swojego albumu."
+	[many, masculine] "{$userName} dodał {$photoCount} nowych zdjęć do swojego albumu."
+	[many, feminine] "{$userName} dodała {$photoCount} nowych zdjęć do swojego albumu."
+	[many, other] "Użytkownik {$userName} dodał {$photoCount} nowych zdjęć do swojego albumu."
+
+you-see =
+	"Widzisz {ACTOR $monster CASE accusative}!"
+
+they-wave =
+	"{ACTOR $monster CASE nominative CAPITALIZED} macha do ciebie!"
