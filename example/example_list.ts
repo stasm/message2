@@ -24,7 +24,10 @@ class Person {
 }
 
 // TODO(stasm): This is generic enough that it could be in impl/Formattable.ts.
-class FormattableList<T> extends RuntimeValue<Array<T>> implements Formattable {
+class FormattableList<T extends {toString(): string}>
+	extends RuntimeValue<Array<T>>
+	implements Formattable
+{
 	private opts: Intl.ListFormatOptions;
 
 	constructor(value: Array<T>, opts: Intl.ListFormatOptions = {}) {
@@ -35,12 +38,12 @@ class FormattableList<T> extends RuntimeValue<Array<T>> implements Formattable {
 	formatToString(ctx: FormattingContext): string {
 		// TODO(stasm): Cache ListFormat.
 		let lf = new Intl.ListFormat(ctx.locale, this.opts);
-		return lf.format(this.value);
+		return lf.format(this.value.map((x) => x.toString()));
 	}
 
 	*formatToParts(ctx: FormattingContext): IterableIterator<FormattedPart> {
 		let lf = new Intl.ListFormat(ctx.locale, this.opts);
-		yield* lf.formatToParts(this.value);
+		yield* lf.formatToParts(this.value.map((x) => x.toString()));
 	}
 }
 
@@ -105,8 +108,8 @@ REGISTRY_FORMAT["PEOPLE_LIST"] = function (
 
 	return new FormattableList(names, {
 		// TODO(stasm): Add default options.
-		style: list_style.value,
-		type: list_type.value,
+		style: list_style.value as Intl.ListFormatStyle,
+		type: list_type.value as Intl.ListFormatType,
 	});
 
 	function decline(name: string): string {
