@@ -277,7 +277,12 @@ export class Lexer {
 				current = this.#next_ignore_whitespace();
 				yield this.#expect_punctuator("=", current);
 				current = this.#next_ignore_whitespace();
-				yield this.#expect_nmtoken(current);
+				let first_char = current.value[0];
+				if (first_char === "$") {
+					yield this.#expect_variable_name(current);
+				} else {
+					yield this.#expect_nmtoken(current);
+				}
 			} else {
 				throw this.#error("Expected whitespace between options", current);
 			}
