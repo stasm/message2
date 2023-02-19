@@ -43,8 +43,13 @@ function main_file(file_path) {
 
 function main(content) {
 	let lexer = new Lexer(content);
-	for (let token of lexer) {
-		console.log(token);
+	try {
+		for (let token of lexer) {
+			console.log(token);
+		}
+	} catch (e) {
+		console.error(`
+[${e.name} at ${e.start}-${e.end}] ${e.message}`);
 	}
 }
 

@@ -62,7 +62,18 @@ export class Whitespace extends Token {
 	kind = "whitespace";
 }
 
-export class LexingError extends Error {}
+export class LexingError extends Error {
+	message: string;
+	start: number;
+	end: number;
+
+	constructor(message: string, start: number, end = start) {
+		super(message);
+		this.message = message;
+		this.start = start;
+		this.end = end;
+	}
+}
 
 const re_name =
 	/^[A-Za-z_\u{C0}-\u{D6}\u{D8}-\u{F6}\u{F8}-\u{2FF}\u{370}-\u{37D}\u{37F}-\u{1FFF}\u{200C}-\u{200D}\u{2070}-\u{218F}\u{2C00}-\u{2FEF}\u{3001}-\u{D7FF}\u{F900}-\u{FDCF}\u{FDF0}-\u{FFFD}\u{10000}-\u{EFFFF}][A-Za-z_\u{C0}-\u{D6}\u{D8}-\u{F6}\u{F8}-\u{2FF}\u{370}-\u{37D}\u{37F}-\u{1FFF}\u{200C}-\u{200D}\u{2070}-\u{218F}\u{2C00}-\u{2FEF}\u{3001}-\u{D7FF}\u{F900}-\u{FDCF}\u{FDF0}-\u{FFFD}\u{10000}-\u{EFFFF}0-9\-\.\u{B7}\u{300}\u{36F}\u{203F}-\u{2040}]*$/u;
@@ -430,7 +441,7 @@ export class Lexer {
 	#next_include_whitespace(): Atom {
 		let {value, done} = this.atoms.next();
 		if (done) {
-			throw new LexingError("Unexpected end of input.");
+			throw new LexingError("Unexpected end of input.", this.input.length);
 		}
 		return value;
 	}
@@ -509,6 +520,6 @@ export class Lexer {
 	#error(message: string, current: Atom) {
 		let end = Math.min(current.end + 20, this.input.length);
 		let context = this.input.slice(current.start, end);
-		return new LexingError(`${message}: ...${context}`);
+		return new LexingError(`${message}: ...${context}`, current.start, current.end);
 	}
 }
