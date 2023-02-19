@@ -287,6 +287,8 @@ export class Lexer {
 				let first_char = current.value[0];
 				if (first_char === "$") {
 					yield this.#expect_variable_name(current);
+				} else if (current.value === "(") {
+					yield this.#expect_literal(current);
 				} else {
 					yield this.#expect_nmtoken(current);
 				}
