@@ -52,6 +52,11 @@ export class Whitespace extends Token {
 
 export class LexingError extends Error {}
 
+const re_name =
+	/[A-Za-z_\u{C0}-\u{D6}\u{D8}-\u{F6}\u{F8}-\u{2FF}\u{370}-\u{37D}\u{37F}-\u{1FFF}\u{200C}-\u{200D}\u{2070}-\u{218F}\u{2C00}-\u{2FEF}\u{3001}-\u{D7FF}\u{F900}-\u{FDCF}\u{FDF0}-\u{FFFD}\u{10000}-\u{EFFFF}][A-Za-z_\u{C0}-\u{D6}\u{D8}-\u{F6}\u{F8}-\u{2FF}\u{370}-\u{37D}\u{37F}-\u{1FFF}\u{200C}-\u{200D}\u{2070}-\u{218F}\u{2C00}-\u{2FEF}\u{3001}-\u{D7FF}\u{F900}-\u{FDCF}\u{FDF0}-\u{FFFD}\u{10000}-\u{EFFFF}0-9-\.\u{B7}\u{300}\u{36F}\u{203F}-\u{2040}]*/u;
+const re_nmtoken =
+	/[A-Za-z_\u{C0}-\u{D6}\u{D8}-\u{F6}\u{F8}-\u{2FF}\u{370}-\u{37D}\u{37F}-\u{1FFF}\u{200C}-\u{200D}\u{2070}-\u{218F}\u{2C00}-\u{2FEF}\u{3001}-\u{D7FF}\u{F900}-\u{FDCF}\u{FDF0}-\u{FFFD}\u{10000}-\u{EFFFF}0-9-\.\u{B7}\u{300}\u{36F}\u{203F}-\u{2040}]+/u;
+
 export class Lexer {
 	input: string;
 	atoms: Iterator<Atom>;
@@ -93,18 +98,23 @@ export class Lexer {
 			// Skip the whitespace.
 		}
 
-		yield this.#expect_variable_name();
-		yield this.#expect_punctuator("=");
-		yield this.#expect_punctuator("{");
+		current = this.#next_ignore_whitespace();
+		yield this.#expect_variable_name(current);
+		current = this.#next_ignore_whitespace();
+		yield this.#expect_punctuator("=", current);
+		current = this.#next_ignore_whitespace();
+		yield this.#expect_punctuator("{", current);
 		yield* this.#emit_expression();
 	}
 
 	*#emit_match(atom: Atom) {
 		yield new Keyword(atom.value);
-		yield this.#expect_punctuator("{");
-		yield* this.#emit_expression();
 
 		let current = this.#next_ignore_whitespace();
+		yield this.#expect_punctuator("{", current);
+		yield* this.#emit_expression();
+
+		current = this.#next_ignore_whitespace();
 		while (current.value === "{") {
 			yield new Punctuator(current.value);
 			yield* this.#emit_expression();
@@ -145,8 +155,7 @@ export class Lexer {
 					break;
 				} else {
 					key_seen = true;
-					// TODO validate
-					yield new Nmtoken(current.value);
+					yield this.#expect_nmtoken(current);
 					current = this.#next_include_whitespace();
 				}
 			} else if (current.value === "{") {
@@ -202,53 +211,45 @@ export class Lexer {
 		}
 	}
 
-	#expect_punctuator(value: string): Token {
-		let current = this.#next_ignore_whitespace();
-		if (current.kind === "punctuator" && current.value === value) {
-			return new Punctuator(current.value);
-		} else {
-			throw new LexingError("Expected " + value + ".");
+	#expect_punctuator(value: string, atom: Atom): Token {
+		if (atom.kind === "punctuator" && atom.value === value) {
+			return new Punctuator(atom.value);
 		}
+		throw new LexingError("Expected " + value + ".");
 	}
 
-	#expect_variable_name(): Token {
-		let current = this.#next_ignore_whitespace();
-		// TODO: regex.
-		if (current.value.startsWith("$")) {
-			return new VariableName(current.value.slice(1));
-		} else {
-			throw new LexingError("Expected variable name.");
+	#expect_variable_name(atom: Atom): Token {
+		if (atom.kind === "word" && atom.value.startsWith("$")) {
+			let name = atom.value.slice(1);
+			if (re_name.test(name)) {
+				return new VariableName(name);
+			}
 		}
+		throw new LexingError("Expected variable name.");
 	}
 
-	#expect_function_name() {
-		let current = this.#next_ignore_whitespace();
-		// TODO: regex.
-		if (current.value.startsWith(":")) {
-			return new FunctionName(current.value.slice(1));
-		} else {
-			throw new LexingError("Expected variable name.");
+	#expect_function_name(atom: Atom) {
+		if (atom.kind === "word" && atom.value.startsWith(":")) {
+			let name = atom.value.slice(1);
+			if (re_name.test(name)) {
+				return new FunctionName(name);
+			}
 		}
+		throw new LexingError("Expected variable name.");
 	}
 
-	#expect_name() {
-		let current = this.#next_ignore_whitespace();
-		// TODO: regex.
-		if (current) {
-			return new Name(current.value);
-		} else {
-			throw new LexingError("Expected name.");
+	#expect_name(atom: Atom) {
+		if (atom.kind === "word" && re_name.test(atom.value)) {
+			return new Name(atom.value);
 		}
+		throw new LexingError("Expected name.");
 	}
 
-	#expect_nmtoken() {
-		let current = this.#next_ignore_whitespace();
-		// TODO: regex.
-		if (current) {
-			return new Nmtoken(current.value);
-		} else {
-			throw new LexingError("Expected nmtoken.");
+	#expect_nmtoken(atom: Atom) {
+		if (atom.kind === "word" && re_nmtoken.test(atom.value)) {
+			return new Nmtoken(atom.value);
 		}
+		throw new LexingError("Expected nmtoken.");
 	}
 
 	#next_or_end(): Atom | null {
