@@ -83,12 +83,12 @@ export class Lexer {
 		} else if (atom.value === "{") {
 			yield* this.#emit_pattern(atom);
 		} else {
-			throw new LexingError(`Unexpected token: "${atom.value}"`);
+			throw this.#error("Unexpected token", atom);
 		}
 
 		let trailing = this.#next_or_end();
 		if (trailing) {
-			throw new LexingError(`Expected end of input, got "${trailing.value}".`);
+			throw this.#error("Expected end of input", trailing);
 		}
 	}
 
@@ -98,7 +98,7 @@ export class Lexer {
 		// require whitespace
 		let current = this.#next_include_whitespace();
 		if (current.kind !== "whitespace") {
-			throw new LexingError("Expected whitespace.");
+			throw this.#error("Expected whitespace", current);
 		} else {
 			// Skip the whitespace.
 		}
@@ -139,7 +139,7 @@ export class Lexer {
 			} else if (current.value === "when") {
 				yield* this.#emit_when(current);
 			} else {
-				throw new LexingError(`Expected "when" or end of input, got "${current.value}"`);
+				throw this.#error("Expected 'when' or end of input", current);
 			}
 		}
 	}
@@ -150,7 +150,7 @@ export class Lexer {
 		// Require whitespace after "when".
 		let current = this.#next_include_whitespace();
 		if (current.kind !== "whitespace") {
-			throw new LexingError(`Expected whitespace after "when".`);
+			throw this.#error("Expected whitespace after 'when'", current);
 		}
 
 		// Require at least one key.
@@ -168,7 +168,7 @@ export class Lexer {
 				}
 				yield this.#expect_key(current);
 			} else {
-				throw new LexingError("Expected whitespace between variant keys.");
+				throw this.#error("Expected whitespace between variant keys", current);
 			}
 		}
 
@@ -217,9 +217,7 @@ export class Lexer {
 			} else if (current.value === "(") {
 				yield this.#expect_literal(current);
 			} else {
-				throw new LexingError(
-					`Expected variable, literal, or function, got "${current.value}".`
-				);
+				throw this.#error("Expected variable, literal, or function", current);
 			}
 
 			current = this.#next_include_whitespace();
@@ -234,7 +232,7 @@ export class Lexer {
 					yield* this.#emit_options();
 				}
 			} else {
-				throw new LexingError(`Expected } or whitespace, got "${current.value}".`);
+				throw this.#error("Expected } or whitespace", current);
 			}
 		}
 	}
@@ -256,7 +254,7 @@ export class Lexer {
 				current = this.#next_ignore_whitespace();
 				yield this.#expect_nmtoken(current);
 			} else {
-				throw new LexingError("Expected whitespace between options.");
+				throw this.#error("Expected whitespace between options", current);
 			}
 		}
 		// End of the expression.
@@ -290,14 +288,14 @@ export class Lexer {
 		if (atom.kind === "word" && atom.value === value) {
 			return new Keyword(atom.value);
 		}
-		throw new LexingError("Expected keyword: " + value + ".");
+		throw this.#error("Expected keyword: " + value, atom);
 	}
 
 	#expect_punctuator(value: string, atom: Atom): Token {
 		if (atom.kind === "punctuator" && atom.value === value) {
 			return new Punctuator(atom.value);
 		}
-		throw new LexingError("Expected " + value + ".");
+		throw this.#error("Expected " + value, atom);
 	}
 
 	#expect_variable_name(atom: Atom): Token {
@@ -307,7 +305,7 @@ export class Lexer {
 				return new VariableName(name);
 			}
 		}
-		throw new LexingError("Expected variable name.");
+		throw this.#error("Expected variable name", atom);
 	}
 
 	#expect_function_name(atom: Atom) {
@@ -317,21 +315,21 @@ export class Lexer {
 				return new FunctionName(name);
 			}
 		}
-		throw new LexingError("Expected function name.");
+		throw this.#error("Expected function name", atom);
 	}
 
 	#expect_name(atom: Atom) {
 		if (atom.kind === "word" && re_name.test(atom.value)) {
 			return new Name(atom.value);
 		}
-		throw new LexingError("Expected name.");
+		throw this.#error("Expected name", atom);
 	}
 
 	#expect_nmtoken(atom: Atom) {
 		if (atom.kind === "word" && re_nmtoken.test(atom.value)) {
 			return new Nmtoken(atom.value);
 		}
-		throw new LexingError("Expected nmtoken.");
+		throw this.#error("Expected nmtoken", atom);
 	}
 
 	#next_or_end(): Atom | null {
@@ -414,5 +412,11 @@ export class Lexer {
 		if (value) {
 			yield {kind, value, start, end: cursor};
 		}
+	}
+
+	#error(message: string, atom: Atom) {
+		let end = Math.min(atom.end + 20, this.input.length);
+		let context = this.input.slice(atom.start, end);
+		return new LexingError(`${message}: ...${context}`);
 	}
 }
