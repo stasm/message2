@@ -26,6 +26,14 @@ export class FunctionName extends Token {
 	kind = "function_name";
 }
 
+export class MarkupStart extends Token {
+	kind = "markup_start";
+}
+
+export class MarkupEnd extends Token {
+	kind = "markup_end";
+}
+
 export class Name extends Token {
 	kind = "name";
 }
@@ -216,6 +224,17 @@ export class Lexer {
 			// It's a FunctionExpression.
 			yield this.#expect_function_name(current);
 			yield* this.#emit_options();
+		} else if (first_char === "+") {
+			yield this.#expect_markup_start(current);
+			yield* this.#emit_options();
+		} else if (first_char === "-") {
+			yield this.#expect_markup_end(current);
+			current = this.#next_ignore_whitespace();
+			if (current.value === "}") {
+				yield new Punctuator(current.value);
+			} else {
+				throw this.#error("Expected }", current);
+			}
 		} else {
 			// It's an OperandExpression.
 			if (first_char === "$") {
@@ -326,6 +345,26 @@ export class Lexer {
 			}
 		}
 		throw this.#error("Expected function name", current);
+	}
+
+	#expect_markup_start(current: Atom) {
+		if (current.kind === "word" && current.value.startsWith("+")) {
+			let name = current.value.slice(1);
+			if (re_name.test(name)) {
+				return new MarkupStart(name);
+			}
+		}
+		throw this.#error("Expected markup start", current);
+	}
+
+	#expect_markup_end(current: Atom) {
+		if (current.kind === "word" && current.value.startsWith("-")) {
+			let name = current.value.slice(1);
+			if (re_name.test(name)) {
+				return new MarkupEnd(name);
+			}
+		}
+		throw this.#error("Expected markup end", current);
 	}
 
 	#expect_name(current: Atom) {
