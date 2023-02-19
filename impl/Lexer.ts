@@ -34,6 +34,10 @@ export class Nmtoken extends Token {
 	kind = "nmtoken";
 }
 
+export class Literal extends Token {
+	kind = "literal";
+}
+
 export class Star extends Token {
 	kind = "star";
 }
@@ -151,7 +155,7 @@ export class Lexer {
 
 		// Require at least one key.
 		current = this.#next_include_whitespace();
-		yield* this.#emit_key(current);
+		yield this.#expect_key(current);
 
 		while (true) {
 			current = this.#next_include_whitespace();
@@ -162,21 +166,13 @@ export class Lexer {
 				if (current.value === "{") {
 					break;
 				}
-				yield* this.#emit_key(current);
+				yield this.#expect_key(current);
 			} else {
 				throw new LexingError("Expected whitespace between variant keys.");
 			}
 		}
 
 		yield* this.#emit_pattern(current);
-	}
-
-	*#emit_key(atom: Atom) {
-		if (atom.value === "*") {
-			yield new Star(atom.value);
-		} else {
-			yield this.#expect_nmtoken(atom);
-		}
 	}
 
 	*#emit_pattern(atom: Atom) {
@@ -215,6 +211,24 @@ export class Lexer {
 				// TODO: Tag them.
 				yield new Nmtoken(current.value);
 			}
+		}
+	}
+
+	#expect_key(atom: Atom) {
+		if (atom.kind !== "punctuator") {
+			return this.#expect_nmtoken(atom);
+		}
+		if (atom.value === "*") {
+			return new Star(atom.value);
+		}
+		if (atom.value === "(") {
+			let literal_acc = "";
+			let current = this.#next_include_whitespace();
+			while (current.value !== ")") {
+				literal_acc += current.value;
+				current = this.#next_include_whitespace();
+			}
+			return new Literal(literal_acc);
 		}
 	}
 
