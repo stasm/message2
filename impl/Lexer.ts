@@ -71,32 +71,38 @@ export class Lexer {
 	}
 
 	*[Symbol.iterator]() {
-		let atom = this.#next_ignore_whitespace();
-		while (atom.value === "let") {
-			yield* this.#emit_let(atom);
-			atom = this.#next_ignore_whitespace();
+		let current = this.#next_ignore_whitespace();
+
+		// let definitions
+		while (current.value === "let") {
+			yield* this.#emit_let(current);
+			current = this.#next_ignore_whitespace();
 		}
 
 		// body
-		if (atom.value === "match") {
-			yield* this.#emit_match(atom);
-		} else if (atom.value === "{") {
-			yield* this.#emit_pattern(atom);
+		if (current.value === "match") {
+			yield* this.#emit_match(current);
+		} else if (current.value === "{") {
+			yield* this.#emit_pattern(current);
 		} else {
-			throw this.#error("Unexpected token", atom);
+			throw this.#error("Unexpected token", current);
 		}
 
-		let trailing = this.#next_or_end();
+		let trailing = this.#next_ignore_whitespace_or_end();
 		if (trailing) {
 			throw this.#error("Expected end of input", trailing);
 		}
 	}
 
-	*#emit_let(atom: Atom) {
-		yield this.#expect_keyword("let", atom);
+	// ------------------------------------------------------------------------
+	// emit_* methods yield instances of Token classes, classified according to
+	// the lexical analysis of the input.
+
+	*#emit_let(current: Atom) {
+		yield this.#expect_keyword("let", current);
 
 		// require whitespace
-		let current = this.#next_include_whitespace();
+		current = this.#next_include_whitespace();
 		if (current.kind !== "whitespace") {
 			throw this.#error("Expected whitespace", current);
 		} else {
@@ -111,10 +117,10 @@ export class Lexer {
 		yield* this.#emit_expression(current);
 	}
 
-	*#emit_match(atom: Atom) {
-		yield this.#expect_keyword("match", atom);
+	*#emit_match(current: Atom) {
+		yield this.#expect_keyword("match", current);
 
-		let current = this.#next_ignore_whitespace();
+		current = this.#next_ignore_whitespace();
 		yield this.#expect_punctuator("{", current);
 		yield* this.#emit_expression(current);
 
@@ -129,11 +135,11 @@ export class Lexer {
 		}
 	}
 
-	*#emit_variants(atom: Atom) {
-		yield* this.#emit_when(atom);
+	*#emit_variants(current: Atom) {
+		yield* this.#emit_when(current);
 
 		while (true) {
-			let current = this.#next_or_end();
+			let current = this.#next_ignore_whitespace_or_end();
 			if (current === null) {
 				break;
 			} else if (current.value === "when") {
@@ -144,11 +150,11 @@ export class Lexer {
 		}
 	}
 
-	*#emit_when(atom: Atom) {
-		yield this.#expect_keyword("when", atom);
+	*#emit_when(current: Atom) {
+		yield this.#expect_keyword("when", current);
 
 		// Require whitespace after "when".
-		let current = this.#next_include_whitespace();
+		current = this.#next_include_whitespace();
 		if (current.kind !== "whitespace") {
 			throw this.#error("Expected whitespace after 'when'", current);
 		}
@@ -175,8 +181,8 @@ export class Lexer {
 		yield* this.#emit_pattern(current);
 	}
 
-	*#emit_pattern(atom: Atom) {
-		yield new Punctuator(atom.value);
+	*#emit_pattern(current: Atom) {
+		yield new Punctuator(current.value);
 		let text_acc = "";
 		while (true) {
 			let current = this.#next_include_whitespace();
@@ -200,10 +206,10 @@ export class Lexer {
 		}
 	}
 
-	*#emit_expression(atom: Atom) {
-		yield this.#expect_punctuator("{", atom);
+	*#emit_expression(current: Atom) {
+		yield this.#expect_punctuator("{", current);
 
-		let current = this.#next_ignore_whitespace();
+		current = this.#next_ignore_whitespace();
 		let first_char = current.value[0];
 
 		if (first_char === ":") {
@@ -261,22 +267,26 @@ export class Lexer {
 		yield new Punctuator(current.value);
 	}
 
-	#expect_key(atom: Atom) {
-		if (atom.kind !== "punctuator") {
-			return this.#expect_nmtoken(atom);
+	// ------------------------------------------------------------------------
+	// expect_* methods validate the current atom(s) and return a new instance
+	// of the corresponding Token class.
+
+	#expect_key(current: Atom) {
+		if (current.kind !== "punctuator") {
+			return this.#expect_nmtoken(current);
 		}
-		if (atom.value === "*") {
-			return new Star(atom.value);
+		if (current.value === "*") {
+			return new Star(current.value);
 		}
-		if (atom.value === "(") {
-			return this.#expect_literal(atom);
+		if (current.value === "(") {
+			return this.#expect_literal(current);
 		}
 	}
 
-	#expect_literal(atom: Atom) {
-		this.#expect_punctuator("(", atom);
+	#expect_literal(current: Atom) {
+		this.#expect_punctuator("(", current);
 		let literal_acc = "";
-		let current = this.#next_include_whitespace();
+		current = this.#next_include_whitespace();
 		while (current.value !== ")") {
 			literal_acc += current.value;
 			current = this.#next_include_whitespace();
@@ -284,61 +294,64 @@ export class Lexer {
 		return new Literal(literal_acc);
 	}
 
-	#expect_keyword(value: string, atom: Atom): Token {
-		if (atom.kind === "word" && atom.value === value) {
-			return new Keyword(atom.value);
+	#expect_keyword(value: string, current: Atom): Token {
+		if (current.kind === "word" && current.value === value) {
+			return new Keyword(current.value);
 		}
-		throw this.#error("Expected keyword: " + value, atom);
+		throw this.#error("Expected keyword: " + value, current);
 	}
 
-	#expect_punctuator(value: string, atom: Atom): Token {
-		if (atom.kind === "punctuator" && atom.value === value) {
-			return new Punctuator(atom.value);
+	#expect_punctuator(value: string, current: Atom): Token {
+		if (current.kind === "punctuator" && current.value === value) {
+			return new Punctuator(current.value);
 		}
-		throw this.#error("Expected " + value, atom);
+		throw this.#error("Expected " + value, current);
 	}
 
-	#expect_variable_name(atom: Atom): Token {
-		if (atom.kind === "word" && atom.value.startsWith("$")) {
-			let name = atom.value.slice(1);
+	#expect_variable_name(current: Atom): Token {
+		if (current.kind === "word" && current.value.startsWith("$")) {
+			let name = current.value.slice(1);
 			if (re_name.test(name)) {
 				return new VariableName(name);
 			}
 		}
-		throw this.#error("Expected variable name", atom);
+		throw this.#error("Expected variable name", current);
 	}
 
-	#expect_function_name(atom: Atom) {
-		if (atom.kind === "word" && atom.value.startsWith(":")) {
-			let name = atom.value.slice(1);
+	#expect_function_name(current: Atom) {
+		if (current.kind === "word" && current.value.startsWith(":")) {
+			let name = current.value.slice(1);
 			if (re_name.test(name)) {
 				return new FunctionName(name);
 			}
 		}
-		throw this.#error("Expected function name", atom);
+		throw this.#error("Expected function name", current);
 	}
 
-	#expect_name(atom: Atom) {
-		if (atom.kind === "word" && re_name.test(atom.value)) {
-			return new Name(atom.value);
+	#expect_name(current: Atom) {
+		if (current.kind === "word" && re_name.test(current.value)) {
+			return new Name(current.value);
 		}
-		throw this.#error("Expected name", atom);
+		throw this.#error("Expected name", current);
 	}
 
-	#expect_nmtoken(atom: Atom) {
-		if (atom.kind === "word" && re_nmtoken.test(atom.value)) {
-			return new Nmtoken(atom.value);
+	#expect_nmtoken(current: Atom) {
+		if (current.kind === "word" && re_nmtoken.test(current.value)) {
+			return new Nmtoken(current.value);
 		}
-		throw this.#error("Expected nmtoken", atom);
+		throw this.#error("Expected nmtoken", current);
 	}
 
-	#next_or_end(): Atom | null {
+	// ------------------------------------------------------------------------
+	// Low-level iteration.
+
+	#next_ignore_whitespace_or_end(): Atom | null {
 		let {value, done} = this.atoms.next();
 		if (done) {
 			// We're done!
 			return null;
 		} else if (value.kind === "whitespace") {
-			return this.#next_or_end();
+			return this.#next_ignore_whitespace_or_end();
 		}
 		return value;
 	}
@@ -358,6 +371,9 @@ export class Lexer {
 		}
 		return value;
 	}
+
+	// ------------------------------------------------------------------------
+	// Split the input into atoms based on whitespace and special characters.
 
 	*#scan(): Generator<Atom> {
 		let start = 0;
@@ -414,9 +430,9 @@ export class Lexer {
 		}
 	}
 
-	#error(message: string, atom: Atom) {
-		let end = Math.min(atom.end + 20, this.input.length);
-		let context = this.input.slice(atom.start, end);
+	#error(message: string, current: Atom) {
+		let end = Math.min(current.end + 20, this.input.length);
+		let context = this.input.slice(current.start, end);
 		return new LexingError(`${message}: ...${context}`);
 	}
 }
