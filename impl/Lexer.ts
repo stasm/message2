@@ -202,16 +202,65 @@ export class Lexer {
 
 	*#emit_expression(atom: Atom) {
 		yield this.#expect_punctuator("{", atom);
-		while (true) {
-			let current = this.#next_ignore_whitespace();
+
+		let current = this.#next_ignore_whitespace();
+		let first_char = current.value[0];
+
+		if (first_char === ":") {
+			// It's a FunctionExpression.
+			yield this.#expect_function_name(current);
+			yield* this.#emit_options();
+		} else {
+			// It's an OperandExpression.
+			if (first_char === "$") {
+				yield this.#expect_variable_name(current);
+			} else if (current.value === "(") {
+				yield this.#expect_literal(current);
+			} else {
+				throw new LexingError(
+					`Expected variable, literal, or function, got "${current.value}".`
+				);
+			}
+
+			current = this.#next_include_whitespace();
 			if (current.value === "}") {
 				yield new Punctuator(current.value);
-				break;
+			} else if (current.kind === "whitespace") {
+				current = this.#next_include_whitespace();
+				if (current.value === "}") {
+					yield new Punctuator(current.value);
+				} else {
+					yield this.#expect_function_name(current);
+					yield* this.#emit_options();
+				}
 			} else {
-				// TODO: Tag them.
-				yield new Nmtoken(current.value);
+				throw new LexingError(`Expected } or whitespace, got "${current.value}".`);
 			}
 		}
+	}
+
+	*#emit_options() {
+		let current: Atom;
+		while (true) {
+			current = this.#next_include_whitespace();
+			if (current.value === "}") {
+				break;
+			} else if (current.kind === "whitespace") {
+				current = this.#next_include_whitespace();
+				if (current.value === "}") {
+					break;
+				}
+				yield this.#expect_name(current);
+				current = this.#next_ignore_whitespace();
+				yield this.#expect_punctuator("=", current);
+				current = this.#next_ignore_whitespace();
+				yield this.#expect_nmtoken(current);
+			} else {
+				throw new LexingError("Expected whitespace between options.");
+			}
+		}
+		// End of the expression.
+		yield new Punctuator(current.value);
 	}
 
 	#expect_key(atom: Atom) {
@@ -222,14 +271,19 @@ export class Lexer {
 			return new Star(atom.value);
 		}
 		if (atom.value === "(") {
-			let literal_acc = "";
-			let current = this.#next_include_whitespace();
-			while (current.value !== ")") {
-				literal_acc += current.value;
-				current = this.#next_include_whitespace();
-			}
-			return new Literal(literal_acc);
+			return this.#expect_literal(atom);
 		}
+	}
+
+	#expect_literal(atom: Atom) {
+		this.#expect_punctuator("(", atom);
+		let literal_acc = "";
+		let current = this.#next_include_whitespace();
+		while (current.value !== ")") {
+			literal_acc += current.value;
+			current = this.#next_include_whitespace();
+		}
+		return new Literal(literal_acc);
 	}
 
 	#expect_keyword(value: string, atom: Atom): Token {
@@ -263,7 +317,7 @@ export class Lexer {
 				return new FunctionName(name);
 			}
 		}
-		throw new LexingError("Expected variable name.");
+		throw new LexingError("Expected function name.");
 	}
 
 	#expect_name(atom: Atom) {
