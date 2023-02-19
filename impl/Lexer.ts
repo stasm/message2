@@ -1,5 +1,5 @@
 interface Atom {
-	kind: "word" | "punctuator" | "whitespace";
+	kind: "word" | "punctuator" | "whitespace" | "escape";
 	value: string;
 	start: number;
 	end: number;
@@ -207,9 +207,16 @@ export class Lexer {
 				}
 				yield new Punctuator(current.value);
 				break;
-			} else {
-				// Text.
+			} else if (current.kind !== "escape") {
 				text_acc += current.value;
+			} else if (
+				current.value === "\\}" ||
+				current.value === "\\{" ||
+				current.value === "\\\\"
+			) {
+				text_acc += current.value[1];
+			} else {
+				throw this.#error("Unexpected escape sequence", current);
 			}
 		}
 	}
@@ -312,7 +319,17 @@ export class Lexer {
 		let literal_acc = "";
 		current = this.#next_include_whitespace();
 		while (current.value !== ")") {
-			literal_acc += current.value;
+			if (current.kind !== "escape") {
+				literal_acc += current.value;
+			} else if (
+				current.value === "\\)" ||
+				current.value === "\\(" ||
+				current.value === "\\\\"
+			) {
+				literal_acc += current.value[1];
+			} else {
+				throw this.#error("Unexpected escape sequence", current);
+			}
 			current = this.#next_include_whitespace();
 		}
 		return new Literal(literal_acc);
@@ -425,6 +442,12 @@ export class Lexer {
 		let kind: Atom["kind"] = "punctuator";
 		let value: string = "";
 		for (let char of this.input) {
+			if (kind === "escape") {
+				yield {kind, value: "\\" + char, start, end: cursor};
+				kind = "punctuator";
+				value = "";
+				continue;
+			}
 			switch (char) {
 				case "\t":
 				case "\r":
@@ -452,6 +475,13 @@ export class Lexer {
 					}
 					kind = "punctuator";
 					value = char;
+					start = cursor;
+					break;
+				case "\\":
+					if (value) {
+						yield {kind, value, start, end: cursor};
+					}
+					kind = "escape";
 					start = cursor;
 					break;
 				default:
