@@ -89,7 +89,8 @@ export class Lexer {
 	}
 
 	*#emit_let(atom: Atom) {
-		yield new Keyword(atom.value);
+		yield this.#expect_keyword("let", atom);
+
 		// require whitespace
 		let current = this.#next_include_whitespace();
 		if (current.kind !== "whitespace") {
@@ -103,21 +104,19 @@ export class Lexer {
 		current = this.#next_ignore_whitespace();
 		yield this.#expect_punctuator("=", current);
 		current = this.#next_ignore_whitespace();
-		yield this.#expect_punctuator("{", current);
-		yield* this.#emit_expression();
+		yield* this.#emit_expression(current);
 	}
 
 	*#emit_match(atom: Atom) {
-		yield new Keyword(atom.value);
+		yield this.#expect_keyword("match", atom);
 
 		let current = this.#next_ignore_whitespace();
 		yield this.#expect_punctuator("{", current);
-		yield* this.#emit_expression();
+		yield* this.#emit_expression(current);
 
 		current = this.#next_ignore_whitespace();
 		while (current.value === "{") {
-			yield new Punctuator(current.value);
-			yield* this.#emit_expression();
+			yield* this.#emit_expression(current);
 			current = this.#next_ignore_whitespace();
 		}
 
@@ -142,7 +141,7 @@ export class Lexer {
 	}
 
 	*#emit_when(atom: Atom) {
-		yield new Keyword(atom.value);
+		yield this.#expect_keyword("when", atom);
 
 		// Require whitespace after "when".
 		let current = this.#next_include_whitespace();
@@ -190,8 +189,7 @@ export class Lexer {
 					yield new Text(text_acc);
 					text_acc = "";
 				}
-				yield new Punctuator(current.value);
-				yield* this.#emit_expression();
+				yield* this.#emit_expression(current);
 			} else if (current.value === "}") {
 				if (text_acc) {
 					yield new Text(text_acc);
@@ -206,7 +204,8 @@ export class Lexer {
 		}
 	}
 
-	*#emit_expression() {
+	*#emit_expression(atom: Atom) {
+		yield this.#expect_punctuator("{", atom);
 		while (true) {
 			let current = this.#next_ignore_whitespace();
 			if (current.value === "}") {
@@ -217,6 +216,13 @@ export class Lexer {
 				yield new Nmtoken(current.value);
 			}
 		}
+	}
+
+	#expect_keyword(value: string, atom: Atom): Token {
+		if (atom.kind === "word" && atom.value === value) {
+			return new Keyword(atom.value);
+		}
+		throw new LexingError("Expected keyword: " + value + ".");
 	}
 
 	#expect_punctuator(value: string, atom: Atom): Token {
