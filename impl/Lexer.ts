@@ -144,31 +144,39 @@ export class Lexer {
 	*#emit_when(atom: Atom) {
 		yield new Keyword(atom.value);
 
-		// Require at least one key.
-		let key_seen = false;
-
+		// Require whitespace after "when".
 		let current = this.#next_include_whitespace();
+		if (current.kind !== "whitespace") {
+			throw new LexingError(`Expected whitespace after "when".`);
+		}
+
+		// Require at least one key.
+		current = this.#next_include_whitespace();
+		yield* this.#emit_key(current);
+
 		while (true) {
-			if (current.kind === "whitespace") {
+			current = this.#next_include_whitespace();
+			if (current.value === "{") {
+				break;
+			} else if (current.kind === "whitespace") {
 				current = this.#next_include_whitespace();
 				if (current.value === "{") {
 					break;
-				} else {
-					key_seen = true;
-					yield this.#expect_nmtoken(current);
-					current = this.#next_include_whitespace();
 				}
-			} else if (current.value === "{") {
-				break;
+				yield* this.#emit_key(current);
 			} else {
 				throw new LexingError("Expected whitespace between variant keys.");
 			}
 		}
 
-		if (key_seen) {
-			yield* this.#emit_pattern(current);
+		yield* this.#emit_pattern(current);
+	}
+
+	*#emit_key(atom: Atom) {
+		if (atom.value === "*") {
+			yield new Star(atom.value);
 		} else {
-			throw new LexingError("Expected at least one key.");
+			yield this.#expect_nmtoken(atom);
 		}
 	}
 
