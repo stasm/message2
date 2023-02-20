@@ -7,13 +7,13 @@ export class SyntaxError extends Error {
 }
 
 export class Parser extends ast.Message {
-	input: string;
+	source: string;
 	tokens: Iterator<tokens.Token>;
 
-	constructor(input: string) {
+	constructor(source: string) {
 		super();
-		this.input = input;
-		this.tokens = new Lexer(input)[Symbol.iterator]();
+		this.source = source;
+		this.tokens = new Lexer(source)[Symbol.iterator]();
 	}
 
 	parse() {

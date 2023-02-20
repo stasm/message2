@@ -1,3 +1,4 @@
+import {Atom, scan} from "./atoms.js";
 import * as tokens from "./tokens.js";
 
 export class LexingError extends Error {
@@ -20,12 +21,12 @@ const re_nmtoken =
 	/^[A-Za-z_\u{C0}-\u{D6}\u{D8}-\u{F6}\u{F8}-\u{2FF}\u{370}-\u{37D}\u{37F}-\u{1FFF}\u{200C}-\u{200D}\u{2070}-\u{218F}\u{2C00}-\u{2FEF}\u{3001}-\u{D7FF}\u{F900}-\u{FDCF}\u{FDF0}-\u{FFFD}\u{10000}-\u{EFFFF}0-9\-\.\u{B7}\u{300}-\u{36F}\u{203F}-\u{2040}]+$/u;
 
 export class Lexer {
-	input: string;
+	source: string;
 	atoms: Iterator<Atom>;
 
-	constructor(input: string) {
-		this.input = input;
-		this.atoms = this.#scan();
+	constructor(source: string) {
+		this.source = source;
+		this.atoms = scan(source);
 	}
 
 	*[Symbol.iterator](): Generator<tokens.Token> {
@@ -395,99 +396,14 @@ export class Lexer {
 	#next_include_whitespace(): Atom {
 		let {value, done} = this.atoms.next();
 		if (done) {
-			throw new LexingError("Unexpected end of input.", this.input.length);
+			throw new LexingError("Unexpected end of input.", this.source.length);
 		}
 		return value;
 	}
 
-	// ------------------------------------------------------------------------
-	// Split the input into atoms based on whitespace and special characters.
-
-	*#scan(): Generator<Atom> {
-		let start = 0;
-		let cursor = 0;
-		let kind: Atom["kind"] = "punctuator";
-		let value: string = "";
-		for (let char of this.input) {
-			if (kind === "escape") {
-				yield {kind, value: "\\" + char, start, end: cursor};
-				kind = "punctuator";
-				value = "";
-				continue;
-			}
-			switch (char) {
-				case "\t":
-				case "\r":
-				case "\n":
-				case " ":
-					if (kind === "whitespace") {
-						value += char;
-						break;
-					}
-					if (value) {
-						yield {kind, value, start, end: cursor};
-					}
-					kind = "whitespace";
-					value = char;
-					start = cursor;
-					break;
-				case "{":
-				case "}":
-				case "=":
-				case "*":
-				case "(":
-				case ")":
-					if (value) {
-						yield {kind, value, start, end: cursor};
-					}
-					kind = "punctuator";
-					value = char;
-					start = cursor;
-					break;
-				case "\\":
-					if (value) {
-						yield {kind, value, start, end: cursor};
-					}
-					kind = "escape";
-					start = cursor;
-					break;
-				default:
-					if (kind === "word") {
-						value += char;
-						break;
-					}
-					if (value) {
-						yield {kind, value, start, end: cursor};
-					}
-					kind = "word";
-					value = char;
-					start = cursor;
-			}
-			cursor++;
-		}
-
-		if (value) {
-			yield {kind, value, start, end: cursor};
-		}
-	}
-
 	#error(message: string, current: Atom) {
-		let end = Math.min(current.end + 20, this.input.length);
-		let context = this.input.slice(current.start, end);
+		let end = Math.min(current.end + 20, this.source.length);
+		let context = this.source.slice(current.start, end);
 		return new LexingError(`${message}: ...${context}`, current.start, current.end);
 	}
-}
-
-/* Atom - a context-free segment of the source.
- *
- * Atoms are generated internally by Lexer.#scan() as the first step towards the
- * lexing analysis. The source is segmented into Atoms based on whitespace and
- * special characters. No other information is taken into account; for example,
- * atoms have no knowledge of whether they are part of an expression or a pattern.
- */
-interface Atom {
-	kind: "word" | "punctuator" | "whitespace" | "escape";
-	value: string;
-	start: number;
-	end: number;
 }
