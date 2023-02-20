@@ -1,6 +1,7 @@
 import * as tokens from "./tokens.js";
 
 export class LexingError extends Error {
+	name = "LexingError";
 	message: string;
 	start: number;
 	end: number;
@@ -27,7 +28,7 @@ export class Lexer {
 		this.atoms = this.#scan();
 	}
 
-	*[Symbol.iterator]() {
+	*[Symbol.iterator](): Generator<tokens.Token> {
 		let current = this.#next_ignore_whitespace();
 
 		// let definitions
@@ -78,7 +79,6 @@ export class Lexer {
 		yield this.#expect_keyword("match", current);
 
 		current = this.#next_ignore_whitespace();
-		yield this.#expect_punctuator("{", current);
 		yield* this.#emit_expression(current);
 
 		current = this.#next_ignore_whitespace();
@@ -263,6 +263,8 @@ export class Lexer {
 		if (current.value === "(") {
 			return this.#expect_literal(current);
 		}
+
+		throw this.#error("Expected a valid key", current);
 	}
 
 	#expect_literal(current: Atom) {

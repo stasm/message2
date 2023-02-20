@@ -13,7 +13,11 @@ export interface Local {
 export interface Variant {
 	type: "Variant";
 	keys: Array<Literal | Star>;
-	value: Array<Text | Expression>;
+	value: Pattern;
+}
+
+export interface Pattern {
+	elements: Array<Text | Expression>;
 }
 
 export type Expression = OperandExpression | FunctionExpression;
@@ -21,7 +25,7 @@ export type Expression = OperandExpression | FunctionExpression;
 export interface OperandExpression {
 	type: "OperandExpression";
 	arg: Literal | VariableReference;
-	func?: FunctionExpression;
+	func: FunctionExpression | null;
 }
 
 export interface FunctionExpression {

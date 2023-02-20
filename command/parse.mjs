@@ -1,20 +1,20 @@
 import {readFileSync} from "fs";
 import {createInterface} from "readline";
-import {Lexer} from "../impl/Lexer.js";
+import {Parser} from "../impl/Parser.js";
 
 function exit_help(exit_code) {
 	console.log(`
-    Tokenize a message and print its tokens.
+    Parse a message and print its AST.
 
-        Usage: node lex.mjs [FILE]
+        Usage: node parse.mjs [FILE]
 
         When FILE is not specified, read text from stdin.
 
     Examples:
 
-        node lex.mjs path/to/file.txt
-        node lex.mjs <(echo "{Hello, world!}")
-        cat path/to/file.txt | node lex.mjs
+        node parse.mjs path/to/file.txt
+        node parse.mjs <(echo "{Hello, world!}")
+        cat path/to/file.txt | node parse.mjs
 
     Options:
 
@@ -27,7 +27,7 @@ function main_stdin() {
 	const rl = createInterface({
 		input: process.stdin,
 		output: process.stdout,
-		prompt: "lexer>",
+		prompt: "parser>",
 	});
 
 	const lines = [];
@@ -42,11 +42,11 @@ function main_file(file_path) {
 }
 
 function main(content) {
-	let lexer = new Lexer(content);
+	let parser = new Parser(content);
+	let ast = parser.to_ast();
+	let json = JSON.stringify(ast, null, 4);
+	console.log(json);
 	try {
-		for (let token of lexer) {
-			console.log(token);
-		}
 	} catch (e) {
 		console.error(`
 [${e.name} at ${e.start}-${e.end}] ${e.message}`);
