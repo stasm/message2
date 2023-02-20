@@ -42,11 +42,11 @@ function main_file(file_path) {
 }
 
 function main(content) {
-	let parser = new Parser(content);
-	let ast = parser.to_ast();
-	let json = JSON.stringify(ast, null, 4);
-	console.log(json);
 	try {
+		let parser = new Parser(content);
+		let ast = parser.parse();
+		let json = JSON.stringify(ast, null, 4);
+		console.log(json);
 	} catch (e) {
 		console.error(`
 [${e.name} at ${e.start}-${e.end}] ${e.message}`);

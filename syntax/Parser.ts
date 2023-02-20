@@ -6,52 +6,44 @@ export class SyntaxError extends Error {
 	name = "SyntaxError";
 }
 
-export class Parser {
+export class Parser extends ast.Message {
 	input: string;
 	tokens: Iterator<tokens.Token>;
 
 	constructor(input: string) {
+		super();
 		this.input = input;
 		this.tokens = new Lexer(input)[Symbol.iterator]();
 	}
 
-	to_ast() {
-		let message: ast.Message = {
-			locals: [],
-			selectors: [],
-			variants: [],
-		};
-
+	parse() {
 		let current: tokens.Token | undefined = this.#next_token();
 		while (current instanceof tokens.Keyword && current.value === "let") {
 			let local = this.#parse_local();
-			message.locals.push(local);
+			this.locals.push(local);
 			current = this.#next_token();
 		}
 
 		if (current instanceof tokens.Punctuator && current.value === "{") {
-			let variant: ast.Variant = {
-				type: "Variant",
-				keys: [],
-				value: this.#parse_pattern(),
-			};
-			message.variants.push(variant);
-			return message;
+			let pattern = this.#parse_pattern();
+			let variant = new ast.Variant([], pattern);
+			this.variants.push(variant);
+			return this;
 		}
 
 		if (current instanceof tokens.Keyword && current.value === "match") {
 			current = this.#next_token();
 			while (current instanceof tokens.Punctuator && current.value === "{") {
 				let selector = this.#parse_expression();
-				message.selectors.push(selector);
+				this.selectors.push(selector);
 				current = this.#next_token();
 			}
 			while (current instanceof tokens.Keyword && current.value === "when") {
 				let variant = this.#parse_variant();
-				message.variants.push(variant);
+				this.variants.push(variant);
 				current = this.#next_token_or_end();
 			}
-			return message;
+			return this;
 		}
 
 		current = this.#next_token_or_end();
@@ -67,11 +59,8 @@ export class Parser {
 		this.#next_token();
 		// Skip '{'.
 		this.#next_token();
-		return {
-			type: "Local",
-			name: name.value,
-			expr: this.#parse_expression(),
-		};
+		let expr = this.#parse_expression();
+		return new ast.Local(name.value, expr);
 	}
 
 	#parse_variant(): ast.Variant {
@@ -81,19 +70,16 @@ export class Parser {
 			if (current instanceof tokens.Punctuator && current.value === "{") {
 				break;
 			} else if (current instanceof tokens.Star) {
-				let star: ast.Star = {type: "Star"};
+				let star = new ast.Star();
 				keys.push(star);
 			} else {
 				// tokens.Literal or tokens.Nmtoken.
-				let literal: ast.Literal = {type: "Literal", value: current.value};
+				let literal = new ast.Literal(current.value);
 				keys.push(literal);
 			}
 		}
-		return {
-			type: "Variant",
-			keys,
-			value: this.#parse_pattern(),
-		};
+		let pattern = this.#parse_pattern();
+		return new ast.Variant(keys, pattern);
 	}
 
 	#parse_pattern(): ast.Pattern {
@@ -108,15 +94,13 @@ export class Parser {
 					elements.push(placeholder);
 				}
 			} else if (current instanceof tokens.Text) {
-				let text: ast.Text = {type: "Text", value: current.value};
+				let text = new ast.Text(current.value);
 				elements.push(text);
 			} else {
 				throw new SyntaxError("Unknown element type");
 			}
 		}
-		return {
-			elements,
-		};
+		return new ast.Pattern(elements);
 	}
 
 	#parse_expression(): ast.Expression {
@@ -128,9 +112,9 @@ export class Parser {
 
 		let arg: ast.VariableReference | ast.Literal;
 		if (current instanceof tokens.VariableName) {
-			arg = {type: "VariableReference", name: current.value};
+			arg = new ast.VariableReference(current.value);
 		} else {
-			arg = {type: "Literal", value: current.value};
+			arg = new ast.Literal(current.value);
 		}
 
 		let func: ast.FunctionExpression | null;
@@ -141,11 +125,7 @@ export class Parser {
 			func = null;
 		}
 
-		return {
-			type: "OperandExpression",
-			arg,
-			func,
-		};
+		return new ast.OperandExpression(arg, func);
 	}
 
 	#parse_function_expression(name: tokens.Token): ast.FunctionExpression {
@@ -158,17 +138,13 @@ export class Parser {
 			this.#next_token(); // Skip =.
 			let optval = this.#next_token();
 			if (optval instanceof tokens.VariableName) {
-				opts[current.value] = {type: "VariableReference", name: optval.value};
+				opts[current.value] = new ast.VariableReference(optval.value);
 			} else {
 				// tokens.Literal or tokens.Nmtoken.
-				opts[current.value] = {type: "Literal", value: optval.value};
+				opts[current.value] = new ast.Literal(optval.value);
 			}
 		}
-		return {
-			type: "FunctionExpression",
-			name: name.value,
-			opts,
-		};
+		return new ast.FunctionExpression(name.value, opts);
 	}
 
 	#next_token(): tokens.Token {
