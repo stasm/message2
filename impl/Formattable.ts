@@ -1,6 +1,5 @@
 import {FormattingContext} from "./FormattingContext.js";
-import {PatternElement} from "./model.js";
-import {RuntimeNumber, RuntimeString, RuntimeValue} from "./RuntimeValue.js";
+import {RuntimeNumber, RuntimeString} from "./RuntimeValue.js";
 
 export interface FormattedPart {
 	type: string;
@@ -52,17 +51,5 @@ export class FormattableNumber extends RuntimeNumber implements Formattable {
 
 	*formatToParts(ctx: FormattingContext): IterableIterator<FormattedPart> {
 		yield* new Intl.NumberFormat(ctx.locale, this.opts).formatToParts(this.value);
-	}
-}
-
-export class FormattablePattern extends RuntimeValue<Array<PatternElement>> implements Formattable {
-	formatToString(ctx: FormattingContext): string {
-		return ctx.formatPattern(this.value);
-	}
-
-	*formatToParts(ctx: FormattingContext): IterableIterator<FormattedPart | OpaquePart> {
-		for (let value of ctx.resolvePattern(this.value)) {
-			yield* value.formatToParts(ctx);
-		}
 	}
 }

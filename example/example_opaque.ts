@@ -28,7 +28,6 @@ test("Pass an opaque instance as a variable", (tap) => {
 	let message: Message = {
 		lang: "en",
 		id: "submit",
-		phrases: {},
 		selectors: [],
 		variants: [
 			{

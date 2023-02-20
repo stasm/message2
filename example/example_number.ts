@@ -7,7 +7,6 @@ test("Number formatting (English)", (tap) => {
 	let message: Message = {
 		lang: "en",
 		id: "transferred",
-		phrases: {},
 		selectors: [],
 		variants: [
 			{
@@ -59,7 +58,6 @@ test("Number formatting (French)", (tap) => {
 	let message: Message = {
 		lang: "fr",
 		id: "transferred",
-		phrases: {},
 		selectors: [],
 		variants: [
 			{

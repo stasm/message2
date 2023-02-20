@@ -3,12 +3,6 @@ export interface Message {
 	id: string;
 	selectors: Array<Selector>;
 	variants: Array<Variant>;
-	phrases: Record<string, Phrase>;
-}
-
-export interface Phrase {
-	selectors: Array<Selector>;
-	variants: Array<Variant>;
 }
 
 export interface Selector {

@@ -144,7 +144,6 @@ test("Fancy list formatting, first names only", (tap) => {
 	let message: Message = {
 		lang: "ro",
 		id: "gifts",
-		phrases: {},
 		selectors: [
 			{
 				expr: {
@@ -236,7 +235,6 @@ test("Fancy list formatting, full names", (tap) => {
 	let message: Message = {
 		lang: "ro",
 		id: "gifts",
-		phrases: {},
 		selectors: [
 			{
 				expr: {

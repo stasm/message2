@@ -115,7 +115,6 @@ test("NOUN is ADJECTIVE (English)", (tap) => {
 	let message: Message = {
 		lang: "en",
 		id: "accord",
-		phrases: {},
 		selectors: [],
 		variants: [
 			{
@@ -170,7 +169,6 @@ test("NOUN is ADJECTIVE (Polish; requires according the gender of the adjective)
 	let message: Message = {
 		lang: "pl",
 		id: "accord",
-		phrases: {},
 		selectors: [],
 		variants: [
 			{
@@ -227,7 +225,6 @@ test("Subject verb OBJECT (English)", (tap) => {
 	let message: Message = {
 		lang: "en",
 		id: "you-see",
-		phrases: {},
 		selectors: [],
 		variants: [
 			{
@@ -273,7 +270,6 @@ test("Subject verb OBJECT (Polish; requires the accusative case)", (tap) => {
 	let message: Message = {
 		lang: "pl",
 		id: "you-see",
-		phrases: {},
 		selectors: [],
 		variants: [
 			{
@@ -319,7 +315,6 @@ test("SUBJECT verb (English)", (tap) => {
 	let message: Message = {
 		lang: "en",
 		id: "they-wave",
-		phrases: {},
 		selectors: [],
 		variants: [
 			{
@@ -364,7 +359,6 @@ test("SUBJECT verb (Polish)", (tap) => {
 	let message: Message = {
 		lang: "pl",
 		id: "they-wave",
-		phrases: {},
 		selectors: [],
 		variants: [
 			{

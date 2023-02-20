@@ -9,16 +9,6 @@ flat-variants [PLURAL $photoCount : other, CHOOSE $userGender : other] =
 	[other, feminine] "{$userName} added {$photoCount} new photos to her album."
 	[other, other] "{$userName} added {$photoCount} new photos to their album."
 
-nested-phrases =
-	"{$userName} {PHRASE added-photo} to {PHRASE their-album}."
-nested-phrases.added-photo [PLURAL $photoCount : other] =
-	[one] "added a new photo"
-	[other] "added {$photoCount} new photos"
-nested-phrases.their-album [$userGender : other] =
-	[masculine] "his album"
-	[feminine] "her album"
-	[other] "their album"
-
 you-see =
 	"You see {ACTOR $monster INDEFINITE}!"
 

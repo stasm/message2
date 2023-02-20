@@ -1,4 +1,4 @@
-import {Formattable, FormattableNumber, FormattablePattern} from "./Formattable.js";
+import {Formattable, FormattableNumber} from "./Formattable.js";
 import {FormattingContext} from "./FormattingContext.js";
 import {Matchable, MatchableNumber, MatchablePlural, MatchableString} from "./Matchable.js";
 import {Argument, Parameter} from "./model.js";
@@ -57,24 +57,8 @@ function select_plural(
 
 // The built-in formatting functions.
 export const REGISTRY_FORMAT: Record<string, FormattingFunc> = {
-	PHRASE: get_phrase,
 	NUMBER: format_number,
 };
-
-function get_phrase(
-	ctx: FormattingContext,
-	args: Array<Argument>,
-	opts: Record<string, Parameter>
-): FormattablePattern {
-	let phrase_name = ctx.toRuntimeValue(args[0]);
-	if (!(phrase_name instanceof RuntimeString)) {
-		throw new TypeError();
-	}
-
-	let phrase = ctx.message.phrases[phrase_name.value];
-	let variant = ctx.selectVariant(phrase.variants, phrase.selectors);
-	return new FormattablePattern(variant.value);
-}
 
 function format_number(
 	ctx: FormattingContext,
