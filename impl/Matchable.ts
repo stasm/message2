@@ -25,10 +25,7 @@ export class MatchableNumber extends RuntimeNumber implements Matchable {
 	}
 
 	match(ctx: FormattingContext, key: VariantKey): boolean {
-		if (key.type === "IntegerLiteral") {
-			return this.value === parseInt(key.value);
-		}
-		return false;
+		return this.value === parseInt(key.value);
 	}
 }
 
@@ -41,13 +38,6 @@ export class MatchablePlural extends RuntimeValue<Intl.LDMLPluralRule> implement
 	}
 
 	match(ctx: FormattingContext, key: VariantKey): boolean {
-		switch (key.type) {
-			case "StringLiteral": {
-				return this.value === key.value;
-			}
-			case "IntegerLiteral": {
-				return this.count === parseInt(key.value);
-			}
-		}
+		return this.value === key.value;
 	}
 }

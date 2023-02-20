@@ -2,7 +2,7 @@ import {Formattable, FormattableString, isFormattable} from "./Formattable.js";
 import {Matchable} from "./Matchable.js";
 import {Message, Parameter, PatternElement, Selector, StringLiteral, Variant} from "./model.js";
 import {REGISTRY_FORMAT, REGISTRY_MATCH} from "./registry.js";
-import {RuntimeBoolean, RuntimeNumber, RuntimeString, RuntimeValue} from "./RuntimeValue.js";
+import {RuntimeString, RuntimeValue} from "./RuntimeValue.js";
 
 // Resolution context for a single formatMessage() call.
 
@@ -105,19 +105,9 @@ export class FormattingContext {
 	}
 
 	toRuntimeValue(node: Parameter): RuntimeValue<unknown> {
-		if (typeof node === "undefined") {
-			return new RuntimeBoolean(false);
-		}
-
 		switch (node.type) {
 			case "StringLiteral":
 				return new RuntimeString(node.value);
-			case "IntegerLiteral":
-				return new RuntimeNumber(parseInt(node.value));
-			case "DecimalLiteral":
-				return new RuntimeNumber(parseFloat(node.value));
-			case "BooleanLiteral":
-				return new RuntimeBoolean(node.value);
 			case "VariableReference":
 				return this.vars[node.name];
 			default:

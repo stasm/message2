@@ -179,7 +179,7 @@ test("NOUN is ADJECTIVE (Polish; requires according the gender of the adjective)
 						name: "NOUN",
 						args: [{type: "VariableReference", name: "item"}],
 						opts: {
-							CAPITALIZED: {type: "BooleanLiteral", value: true},
+							CAPITALIZED: {type: "StringLiteral", value: "yes"},
 						},
 					},
 					{type: "StringLiteral", value: " jest "},
@@ -236,7 +236,7 @@ test("Subject verb OBJECT (English)", (tap) => {
 						name: "ACTOR",
 						args: [{type: "VariableReference", name: "monster"}],
 						opts: {
-							INDEFINITE: {type: "BooleanLiteral", value: true},
+							INDEFINITE: {type: "StringLiteral", value: "yes"},
 						},
 					},
 					{type: "StringLiteral", value: "!"},
@@ -325,8 +325,8 @@ test("SUBJECT verb (English)", (tap) => {
 						name: "ACTOR",
 						args: [{type: "VariableReference", name: "monster"}],
 						opts: {
-							DEFINITE: {type: "BooleanLiteral", value: true},
-							CAPITALIZED: {type: "BooleanLiteral", value: true},
+							DEFINITE: {type: "StringLiteral", value: "yes"},
+							CAPITALIZED: {type: "StringLiteral", value: "yes"},
 						},
 					},
 					{type: "StringLiteral", value: " waves at you!"},
@@ -370,7 +370,7 @@ test("SUBJECT verb (Polish)", (tap) => {
 						args: [{type: "VariableReference", name: "monster"}],
 						opts: {
 							CASE: {type: "StringLiteral", value: "nominative"},
-							CAPITALIZED: {type: "BooleanLiteral", value: true},
+							CAPITALIZED: {type: "StringLiteral", value: "yes"},
 						},
 					},
 					{type: "StringLiteral", value: " macha do ciebie!"},

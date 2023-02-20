@@ -6,6 +6,5 @@ export abstract class RuntimeValue<T> {
 	}
 }
 
-export class RuntimeBoolean extends RuntimeValue<boolean> {}
 export class RuntimeNumber extends RuntimeValue<number> {}
 export class RuntimeString extends RuntimeValue<string> {}

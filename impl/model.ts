@@ -15,7 +15,7 @@ export interface Variant {
 	value: Array<PatternElement>;
 }
 
-export type VariantKey = StringLiteral | IntegerLiteral;
+export type VariantKey = StringLiteral;
 export type PatternElement = StringLiteral | VariableReference | FunctionCall;
 
 export interface FunctionCall {
@@ -35,25 +35,5 @@ export interface StringLiteral {
 	value: string;
 }
 
-export interface IntegerLiteral {
-	type: "IntegerLiteral";
-	value: string;
-}
-
-export interface DecimalLiteral {
-	type: "DecimalLiteral";
-	value: string;
-}
-
-export interface BooleanLiteral {
-	type: "BooleanLiteral";
-	value: boolean;
-}
-
 export type Argument = VariableReference | StringLiteral;
-export type Parameter =
-	| VariableReference
-	| StringLiteral
-	| BooleanLiteral
-	| IntegerLiteral
-	| DecimalLiteral;
+export type Parameter = VariableReference | StringLiteral;
