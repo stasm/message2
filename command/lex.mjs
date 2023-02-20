@@ -50,6 +50,7 @@ function main(content) {
 	} catch (e) {
 		console.error(`
 [${e.name} at ${e.start}-${e.end}] ${e.message}`);
+		process.exit(2);
 	}
 }
 
