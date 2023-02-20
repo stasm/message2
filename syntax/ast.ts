@@ -35,7 +35,8 @@ export class Variant extends SyntaxNode {
 	}
 }
 
-export type PatternElement = Text | Expression;
+export type Placeholder = Expression | MarkupOpen | MarkupClose;
+export type PatternElement = Text | Placeholder;
 
 export class Pattern extends SyntaxNode {
 	kind = "Pattern";
@@ -47,8 +48,7 @@ export class Pattern extends SyntaxNode {
 	}
 }
 
-export abstract class Expression extends SyntaxNode {}
-
+export type Expression = OperandExpression | FunctionExpression;
 export type ExpressionArgument = Literal | VariableReference;
 
 export class OperandExpression extends SyntaxNode {
@@ -63,17 +63,40 @@ export class OperandExpression extends SyntaxNode {
 	}
 }
 
-export type OptionValue = Literal | Expression;
+export type OptionValue = Literal | VariableReference;
+export type Options = Record<string, OptionValue>;
 
 export class FunctionExpression extends SyntaxNode {
 	kind = "FunctionExpression";
 	name: string;
-	opts: Record<string, OptionValue>;
+	opts: Options;
 
-	constructor(name: string, opts: Record<string, OptionValue>) {
+	constructor(name: string, opts: Options) {
 		super();
 		this.name = name;
 		this.opts = opts;
+	}
+}
+
+export class MarkupOpen extends SyntaxNode {
+	kind = "MarkupOpen";
+	name: string;
+	opts: Options;
+
+	constructor(name: string, opts: Options) {
+		super();
+		this.name = name;
+		this.opts = opts;
+	}
+}
+
+export class MarkupClose extends SyntaxNode {
+	kind = "MarkupClose";
+	name: string;
+
+	constructor(name: string) {
+		super();
+		this.name = name;
 	}
 }
 

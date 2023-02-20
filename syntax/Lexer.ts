@@ -72,6 +72,8 @@ export class Lexer {
 		current = this.#next_ignore_whitespace();
 		yield this.#expect_punctuator("=", current);
 		current = this.#next_ignore_whitespace();
+		yield this.#expect_punctuator("{", current);
+		current = this.#next_ignore_whitespace();
 		yield* this.#emit_expression(current);
 	}
 
@@ -79,10 +81,14 @@ export class Lexer {
 		yield this.#expect_keyword("match", current);
 
 		current = this.#next_ignore_whitespace();
+		yield this.#expect_punctuator("{", current);
+		current = this.#next_ignore_whitespace();
 		yield* this.#emit_expression(current);
 
 		current = this.#next_ignore_whitespace();
 		while (current.value === "{") {
+			yield this.#expect_punctuator("{", current);
+			current = this.#next_ignore_whitespace();
 			yield* this.#emit_expression(current);
 			current = this.#next_ignore_whitespace();
 		}
@@ -148,7 +154,7 @@ export class Lexer {
 					yield new tokens.Text(text_acc);
 					text_acc = "";
 				}
-				yield* this.#emit_expression(current);
+				yield* this.#emit_placeholder(current);
 			} else if (current.value === "}") {
 				if (text_acc) {
 					yield new tokens.Text(text_acc);
@@ -170,17 +176,13 @@ export class Lexer {
 		}
 	}
 
-	*#emit_expression(current: Atom) {
+	*#emit_placeholder(current: Atom) {
 		yield this.#expect_punctuator("{", current);
 
 		current = this.#next_ignore_whitespace();
 		let first_char = current.value[0];
 
-		if (first_char === ":") {
-			// It's a FunctionExpression.
-			yield this.#expect_function_name(current);
-			yield* this.#emit_options();
-		} else if (first_char === "+") {
+		if (first_char === "+") {
 			yield this.#expect_markup_start(current);
 			yield* this.#emit_options();
 		} else if (first_char === "-") {
@@ -191,6 +193,18 @@ export class Lexer {
 			} else {
 				throw this.#error("Expected }", current);
 			}
+		} else {
+			yield* this.#emit_expression(current);
+		}
+	}
+
+	*#emit_expression(current: Atom) {
+		let first_char = current.value[0];
+
+		if (first_char === ":") {
+			// It's a FunctionExpression.
+			yield this.#expect_function_name(current);
+			yield* this.#emit_options();
 		} else {
 			// It's an OperandExpression.
 			if (first_char === "$") {

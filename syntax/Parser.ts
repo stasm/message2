@@ -34,7 +34,8 @@ export class Parser extends ast.Message {
 		if (current instanceof tokens.Keyword && current.value === "match") {
 			current = this.#next_token();
 			while (current instanceof tokens.Punctuator && current.value === "{") {
-				let selector = this.#parse_expression();
+				current = this.#next_token();
+				let selector = this.#parse_expression(current);
 				this.selectors.push(selector);
 				current = this.#next_token();
 			}
@@ -59,7 +60,9 @@ export class Parser extends ast.Message {
 		this.#next_token();
 		// Skip '{'.
 		this.#next_token();
-		let expr = this.#parse_expression();
+		// The first token of the expression.
+		let current = this.#next_token();
+		let expr = this.#parse_expression(current);
 		return new ast.Local(name.value, expr);
 	}
 
@@ -83,14 +86,14 @@ export class Parser extends ast.Message {
 	}
 
 	#parse_pattern(): ast.Pattern {
-		let elements: Array<ast.Text | ast.Expression> = [];
+		let elements: Array<ast.Text | ast.Placeholder> = [];
 		while (true) {
 			let current = this.#next_token();
 			if (current instanceof tokens.Punctuator) {
 				if (current.value === "}") {
 					break;
 				} else if (current.value === "{") {
-					let placeholder = this.#parse_expression();
+					let placeholder = this.#parse_placeholder();
 					elements.push(placeholder);
 				}
 			} else if (current instanceof tokens.Text) {
@@ -103,11 +106,27 @@ export class Parser extends ast.Message {
 		return new ast.Pattern(elements);
 	}
 
-	#parse_expression(): ast.Expression {
+	#parse_placeholder(): ast.Placeholder {
 		let current = this.#next_token();
 
+		if (current instanceof tokens.MarkupStart) {
+			let opts = this.#parse_options();
+			return new ast.MarkupOpen(current.value, opts);
+		}
+
+		if (current instanceof tokens.MarkupEnd) {
+			// Consume '}'.
+			this.#next_token();
+			return new ast.MarkupClose(current.value);
+		}
+
+		return this.#parse_expression(current);
+	}
+
+	#parse_expression(current: tokens.Token): ast.Expression {
 		if (current instanceof tokens.FunctionName) {
-			return this.#parse_function_expression(current);
+			let opts = this.#parse_options();
+			return new ast.FunctionExpression(current.value, opts);
 		}
 
 		let arg: ast.VariableReference | ast.Literal;
@@ -120,7 +139,8 @@ export class Parser extends ast.Message {
 		let func: ast.FunctionExpression | null;
 		let next = this.#next_token();
 		if (next instanceof tokens.FunctionName) {
-			func = this.#parse_function_expression(next);
+			let opts = this.#parse_options();
+			func = new ast.FunctionExpression(current.value, opts);
 		} else {
 			func = null;
 		}
@@ -128,8 +148,8 @@ export class Parser extends ast.Message {
 		return new ast.OperandExpression(arg, func);
 	}
 
-	#parse_function_expression(name: tokens.Token): ast.FunctionExpression {
-		let opts: Record<string, ast.Literal | ast.VariableReference> = {};
+	#parse_options(): ast.Options {
+		let opts: ast.Options = {};
 		while (true) {
 			let current = this.#next_token();
 			if (current instanceof tokens.Punctuator && current.value === "}") {
@@ -144,7 +164,7 @@ export class Parser extends ast.Message {
 				opts[current.value] = new ast.Literal(optval.value);
 			}
 		}
-		return new ast.FunctionExpression(name.value, opts);
+		return opts;
 	}
 
 	#next_token(): tokens.Token {
