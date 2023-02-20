@@ -1,6 +1,6 @@
 import {readFileSync} from "fs";
 import {createInterface} from "readline";
-import {Parser} from "../impl/Parser.js";
+import {Parser} from "../syntax/Parser.js";
 
 function exit_help(exit_code) {
 	console.log(`

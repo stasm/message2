@@ -1,6 +1,6 @@
 import {readFileSync} from "fs";
 import {createInterface} from "readline";
-import {Lexer} from "../impl/Lexer.js";
+import {Lexer} from "../syntax/Lexer.js";
 
 function exit_help(exit_code) {
 	console.log(`

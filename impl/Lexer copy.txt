@@ -1,0 +1,110 @@
+interface Atom {
+	kind: "word" | "punctuator" | "whitespace";
+	value: string;
+}
+
+interface Token {
+	kind: "word" | "variable" | "function" | "punctuator" | "whitespace";
+	value: string;
+}
+
+class LexicalError extends Error {}
+
+export class Lexer {
+	input: string;
+
+	constructor(input: string) {
+		this.input = input;
+	}
+
+	*[Symbol.iterator](): Generator<Token> {
+		let next_brace_opens_pattern = true;
+		let in_pattern = false;
+		let in_expression = false;
+		let text_acc = "";
+		for (let atom of this.atoms()) {
+			//console.log(1, atom);
+			if (atom.value === "{") {
+				if (next_brace_opens_pattern) {
+					yield atom;
+					next_brace_opens_pattern = false;
+					in_pattern = true;
+				} else if (in_pattern) {
+					// placeholder start
+					in_expression = true;
+					yield {kind: "text", value: text_acc};
+					text_acc = "";
+					yield atom;
+				} else {
+					// expression start
+					in_expression = true;
+					yield atom;
+				}
+			} else if (atom.value === "}") {
+				if (in_expression) {
+					in_expression = false;
+					yield atom;
+				} else if (in_pattern) {
+					in_pattern = false;
+					yield {kind: "text", value: text_acc};
+					text_acc = "";
+					yield atom;
+				} else {
+					throw new LexicalError("Unmatched }.");
+				}
+			} else if (in_pattern && !in_expression) {
+				text_acc += atom.value;
+			} else if (atom.value === "let") {
+				next_brace_opens_pattern = false;
+				yield atom;
+			} else if (atom.value === "match") {
+				next_brace_opens_pattern = false;
+				yield atom;
+			} else if (atom.value === "when") {
+				next_brace_opens_pattern = true;
+				yield atom;
+			} else {
+				yield atom;
+			}
+		}
+	}
+
+	*atoms(): Generator<Atom> {
+		let kind: Atom["kind"] = "punctuator";
+		let value: string = "";
+		for (let char of this.input) {
+			switch (char) {
+				case " ":
+					if (kind === "whitespace") {
+						value += char;
+						break;
+					}
+					if (value) {
+						yield {kind, value};
+					}
+					kind = "whitespace";
+					value = char;
+					break;
+				case "{":
+				case "}":
+				case "=":
+					if (value) {
+						yield {kind, value};
+					}
+					kind = "punctuator";
+					value = char;
+					break;
+				default:
+					if (kind === "word") {
+						value += char;
+						break;
+					}
+					if (value) {
+						yield {kind, value};
+					}
+					kind = "word";
+					value = char;
+			}
+		}
+	}
+}
