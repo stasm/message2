@@ -22,7 +22,7 @@ export class Parser {
 			variants: [],
 		};
 
-		let current = this.#next_token();
+		let current: tokens.Token | undefined = this.#next_token();
 		while (current instanceof tokens.Keyword && current.value === "let") {
 			let local = this.#parse_local();
 			message.locals.push(local);
@@ -49,13 +49,13 @@ export class Parser {
 			while (current instanceof tokens.Keyword && current.value === "when") {
 				let variant = this.#parse_variant();
 				message.variants.push(variant);
-				({value: current} = this.tokens.next());
+				current = this.#next_token_or_end();
 			}
 			return message;
 		}
 
-		let {done} = this.tokens.next();
-		if (!done) {
+		current = this.#next_token_or_end();
+		if (current !== undefined) {
 			throw new SyntaxError("Expected end of input");
 		}
 	}
@@ -171,12 +171,16 @@ export class Parser {
 		};
 	}
 
-	#next_token() {
+	#next_token(): tokens.Token {
 		let {value, done} = this.tokens.next();
 		if (done) {
 			throw new SyntaxError("Unexpected end of input");
 		}
+		return value;
+	}
 
+	#next_token_or_end(): tokens.Token | undefined {
+		let {value} = this.tokens.next();
 		return value;
 	}
 }
