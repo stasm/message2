@@ -21,29 +21,21 @@ export class Local extends SyntaxNode {
 	}
 }
 
-export type VariantKey = Literal | Star;
-
 export class Variant extends SyntaxNode {
 	kind = "Variant" as const;
 	keys: Array<VariantKey>;
-	value: Pattern;
+	pattern: Pattern;
 
-	constructor(keys: Array<VariantKey>, value: Pattern) {
+	constructor(keys: Array<VariantKey>, pattern: Pattern) {
 		super();
 		this.keys = keys;
-		this.value = value;
+		this.pattern = pattern;
 	}
 }
 
-export class Pattern extends SyntaxNode {
-	kind = "Pattern" as const;
-	elements: Array<PatternElement>;
+export type VariantKey = Literal | Star;
 
-	constructor(elements: Array<PatternElement>) {
-		super();
-		this.elements = elements;
-	}
-}
+export type Pattern = Array<PatternElement>;
 
 export type PatternElement = Text | Placeholder;
 

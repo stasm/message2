@@ -17,13 +17,13 @@ export class MessageFormat {
 	formatMessage(vars: Record<string, RuntimeValue>): string {
 		let ctx = new FormattingContext(this.locale, vars);
 		let variant = ctx.selectVariant(this.parsed.variants, this.parsed.selectors);
-		return ctx.formatPattern(variant.value);
+		return ctx.formatPattern(variant.pattern);
 	}
 
 	*formatToParts(vars: Record<string, RuntimeValue>): IterableIterator<RuntimePart> {
 		let ctx = new FormattingContext(this.locale, vars);
 		let variant = ctx.selectVariant(this.parsed.variants, this.parsed.selectors);
-		for (let value of ctx.resolvePattern(variant.value)) {
+		for (let value of ctx.resolvePattern(variant.pattern)) {
 			yield* value.formatToParts(ctx);
 		}
 	}

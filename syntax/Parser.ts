@@ -84,7 +84,7 @@ export class Parser extends ast.Message {
 	}
 
 	#parse_pattern(): ast.Pattern {
-		let elements: Array<ast.Text | ast.Placeholder> = [];
+		let pattern: ast.Pattern = [];
 		while (true) {
 			let current = this.#next_token();
 			if (current instanceof tokens.Punctuator) {
@@ -92,16 +92,16 @@ export class Parser extends ast.Message {
 					break;
 				} else if (current.value === "{") {
 					let placeholder = this.#parse_placeholder();
-					elements.push(placeholder);
+					pattern.push(placeholder);
 				}
 			} else if (current instanceof tokens.Text) {
 				let text = new ast.Text(current.value);
-				elements.push(text);
+				pattern.push(text);
 			} else {
 				throw new SyntaxError("Unknown element type");
 			}
 		}
-		return new ast.Pattern(elements);
+		return pattern;
 	}
 
 	#parse_placeholder(): ast.Placeholder {

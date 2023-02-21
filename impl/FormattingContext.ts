@@ -24,8 +24,7 @@ export class FormattingContext {
 	}
 
 	*resolvePattern(pattern: ast.Pattern): IterableIterator<Formattable> {
-		let result = "";
-		for (let element of pattern.elements) {
+		for (let element of pattern) {
 			if (element instanceof ast.Text) {
 				yield new RuntimeString(element.value);
 			} else if (element instanceof ast.FunctionExpression) {
@@ -44,7 +43,6 @@ export class FormattingContext {
 				// TODO(stasm): markup
 			}
 		}
-		return result;
 	}
 
 	selectVariant(variants: Array<ast.Variant>, selectors: Array<ast.Expression>): ast.Variant {
