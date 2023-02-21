@@ -4,7 +4,6 @@ import {REGISTRY_FORMAT} from "../impl/registry.js";
 import {
 	formatMessage,
 	Formattable,
-	FormattableString,
 	FormattingContext,
 	formatToParts,
 	RuntimeString,
@@ -25,11 +24,11 @@ REGISTRY_FORMAT["NOUN"] = function get_noun(
 	let value = noun["singular_nominative"].toString();
 
 	let capitalized = ctx.toRuntimeValue(opts["CAPITALIZED"]);
-	if (capitalized.value) {
-		return new FormattableString(value[0].toUpperCase() + value.slice(1));
+	if (capitalized) {
+		return new RuntimeString(value[0].toUpperCase() + value.slice(1));
 	}
 
-	return new FormattableString(value);
+	return new RuntimeString(value);
 };
 
 REGISTRY_FORMAT["ADJECTIVE"] = function get_adjective(
@@ -45,7 +44,7 @@ REGISTRY_FORMAT["ADJECTIVE"] = function get_adjective(
 	switch (ctx.locale) {
 		case "en": {
 			let adjective = get_term(ctx.locale, adj_name.value);
-			return new FormattableString(adjective["nominative"].toString());
+			return new RuntimeString(adjective["nominative"].toString());
 		}
 		case "pl": {
 			let noun_name = ctx.toRuntimeValue(opts["ACCORD_WITH"]);
@@ -55,10 +54,10 @@ REGISTRY_FORMAT["ADJECTIVE"] = function get_adjective(
 
 			let noun = get_term(ctx.locale, noun_name.value);
 			let adjective = get_term(ctx.locale, adj_name.value);
-			return new FormattableString(adjective["singular_" + noun["gender"]].toString());
+			return new RuntimeString(adjective["singular_" + noun["gender"]].toString());
 		}
 		default:
-			return new FormattableString(adj_name.toString());
+			return new RuntimeString(adj_name.toString());
 	}
 };
 
@@ -77,19 +76,19 @@ REGISTRY_FORMAT["ACTOR"] = function get_noun(
 	switch (ctx.locale) {
 		case "en": {
 			let value: string;
-			if (ctx.toRuntimeValue(opts["DEFINITE"]).value) {
+			if (ctx.toRuntimeValue(opts["DEFINITE"])) {
 				value = term["definite"].toString();
-			} else if (ctx.toRuntimeValue(opts["INDEFINITE"]).value) {
+			} else if (ctx.toRuntimeValue(opts["INDEFINITE"])) {
 				value = term["indefinite"].toString();
 			} else {
 				value = term["bare"].toString();
 			}
 
-			if (ctx.toRuntimeValue(opts["CAPITALIZED"]).value) {
-				return new FormattableString(value[0].toUpperCase() + value.slice(1));
+			if (ctx.toRuntimeValue(opts["CAPITALIZED"])) {
+				return new RuntimeString(value[0].toUpperCase() + value.slice(1));
 			}
 
-			return new FormattableString(value);
+			return new RuntimeString(value);
 		}
 		case "pl": {
 			let declension = ctx.toRuntimeValue(opts["CASE"]);
@@ -100,14 +99,14 @@ REGISTRY_FORMAT["ACTOR"] = function get_noun(
 			let value = term[declension.value].toString();
 
 			let capitalized = ctx.toRuntimeValue(opts["CAPITALIZED"]);
-			if (capitalized.value) {
-				return new FormattableString(value[0].toUpperCase() + value.slice(1));
+			if (capitalized) {
+				return new RuntimeString(value[0].toUpperCase() + value.slice(1));
 			}
 
-			return new FormattableString(value);
+			return new RuntimeString(value);
 		}
 		default:
-			return new FormattableString(name.value);
+			return new RuntimeString(name.value);
 	}
 };
 
@@ -142,16 +141,16 @@ test("NOUN is ADJECTIVE (English)", (tap) => {
 
 	tap.equal(
 		formatMessage(message, {
-			item: new FormattableString("t-shirt"),
-			color: new FormattableString("red"),
+			item: new RuntimeString("t-shirt"),
+			color: new RuntimeString("red"),
 		}),
 		"The T-shirt is red."
 	);
 
 	tap.same(
 		formatToParts(message, {
-			item: new FormattableString("t-shirt"),
-			color: new FormattableString("red"),
+			item: new RuntimeString("t-shirt"),
+			color: new RuntimeString("red"),
 		}),
 		[
 			{type: "literal", value: "The "},
@@ -199,16 +198,16 @@ test("NOUN is ADJECTIVE (Polish; requires according the gender of the adjective)
 
 	tap.equal(
 		formatMessage(message, {
-			item: new FormattableString("t-shirt"),
-			color: new FormattableString("red"),
+			item: new RuntimeString("t-shirt"),
+			color: new RuntimeString("red"),
 		}),
 		"Tiszert jest czerwony."
 	);
 
 	tap.same(
 		formatToParts(message, {
-			item: new FormattableString("t-shirt"),
-			color: new FormattableString("red"),
+			item: new RuntimeString("t-shirt"),
+			color: new RuntimeString("red"),
 		}),
 		[
 			{type: "literal", value: "Tiszert"},
@@ -247,14 +246,14 @@ test("Subject verb OBJECT (English)", (tap) => {
 
 	tap.equal(
 		formatMessage(message, {
-			monster: new FormattableString("dinosaur"),
+			monster: new RuntimeString("dinosaur"),
 		}),
 		"You see a dinosaur!"
 	);
 
 	tap.same(
 		formatToParts(message, {
-			monster: new FormattableString("dinosaur"),
+			monster: new RuntimeString("dinosaur"),
 		}),
 		[
 			{type: "literal", value: "You see "},
@@ -292,14 +291,14 @@ test("Subject verb OBJECT (Polish; requires the accusative case)", (tap) => {
 
 	tap.equal(
 		formatMessage(message, {
-			monster: new FormattableString("dinosaur"),
+			monster: new RuntimeString("dinosaur"),
 		}),
 		"Widzisz dinozaura!"
 	);
 
 	tap.same(
 		formatToParts(message, {
-			monster: new FormattableString("dinosaur"),
+			monster: new RuntimeString("dinosaur"),
 		}),
 		[
 			{type: "literal", value: "Widzisz "},
@@ -337,14 +336,14 @@ test("SUBJECT verb (English)", (tap) => {
 
 	tap.equal(
 		formatMessage(message, {
-			monster: new FormattableString("ogre"),
+			monster: new RuntimeString("ogre"),
 		}),
 		"The ogre waves at you!"
 	);
 
 	tap.same(
 		formatToParts(message, {
-			monster: new FormattableString("ogre"),
+			monster: new RuntimeString("ogre"),
 		}),
 		[
 			{type: "literal", value: "The ogre"},
@@ -381,14 +380,14 @@ test("SUBJECT verb (Polish)", (tap) => {
 
 	tap.equal(
 		formatMessage(message, {
-			monster: new FormattableString("ogre"),
+			monster: new RuntimeString("ogre"),
 		}),
 		"Ogr macha do ciebie!"
 	);
 
 	tap.same(
 		formatToParts(message, {
-			monster: new FormattableString("ogre"),
+			monster: new RuntimeString("ogre"),
 		}),
 		[
 			{type: "literal", value: "Ogr"},

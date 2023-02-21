@@ -1,8 +1,7 @@
-import {Formattable, FormattableNumber} from "./Formattable.js";
 import {FormattingContext} from "./FormattingContext.js";
-import {Matchable, MatchableNumber, MatchablePlural, MatchableString} from "./Matchable.js";
-import {Argument, Parameter} from "./model.js";
-import {RuntimeNumber, RuntimeString} from "./RuntimeValue.js";
+import {Argument, Parameter, VariantKey} from "./model.js";
+import {RuntimeString} from "./RuntimeString.js";
+import {Formattable, Matchable, RuntimeValue} from "./RuntimeValue.js";
 
 export type FormattingFunc = (
 	ctx: FormattingContext,
@@ -28,15 +27,26 @@ function select_choose(
 	opts: Record<string, Parameter>
 ): Matchable {
 	let value = ctx.toRuntimeValue(args[0]);
-	if (value instanceof RuntimeNumber) {
-		return new MatchableNumber(value.value);
-	}
 
 	if (value instanceof RuntimeString) {
-		return new MatchableString(value.value);
+		return value;
 	}
 
 	throw new TypeError();
+}
+
+export class MatchablePlural implements Matchable {
+	public value: Intl.LDMLPluralRule;
+	public count: number;
+
+	constructor(value: Intl.LDMLPluralRule, count: number) {
+		this.value = value;
+		this.count = count;
+	}
+
+	match(ctx: FormattingContext, key: VariantKey): boolean {
+		return this.value === key.value;
+	}
 }
 
 function select_plural(
@@ -45,30 +55,56 @@ function select_plural(
 	opts: Record<string, Parameter>
 ): Matchable {
 	let count = ctx.toRuntimeValue(args[0]);
-	if (!(count instanceof RuntimeNumber)) {
+	if (!(count instanceof RuntimeString)) {
 		throw new TypeError();
 	}
 
+	let value = parseInt(count.value);
+
 	// TODO(stasm): Cache PluralRules.
 	let pr = new Intl.PluralRules(ctx.locale);
-	let category = pr.select(count.value);
-	return new MatchablePlural(category, count.value);
+	let category = pr.select(value);
+	return new MatchablePlural(category, value);
 }
 
 // The built-in formatting functions.
 export const REGISTRY_FORMAT: Record<string, FormattingFunc> = {
 	NUMBER: format_number,
 };
+export class RuntimeNumber implements RuntimeValue {
+	public value: number;
+	private opts: Intl.NumberFormatOptions;
+
+	constructor(value: number, opts: Intl.NumberFormatOptions = {}) {
+		this.value = value;
+		this.opts = opts;
+	}
+
+	formatToString(ctx: FormattingContext) {
+		// TODO(stasm): Cache NumberFormat.
+		return new Intl.NumberFormat(ctx.locale, this.opts).format(this.value);
+	}
+
+	*formatToParts(ctx: FormattingContext) {
+		yield* new Intl.NumberFormat(ctx.locale, this.opts).formatToParts(this.value);
+	}
+
+	match(ctx: FormattingContext, key: VariantKey) {
+		return this.value === parseInt(key.value);
+	}
+}
 
 function format_number(
 	ctx: FormattingContext,
 	args: Array<Argument>,
 	opts: Record<string, Parameter>
-): FormattableNumber {
+): RuntimeNumber {
 	let number = ctx.toRuntimeValue(args[0]);
-	if (!(number instanceof RuntimeNumber)) {
+	if (!(number instanceof RuntimeString)) {
 		throw new TypeError();
 	}
+
+	let value = parseInt(number.value);
 
 	// TODO(stasm): Add more options.
 	let opt_values: Record<string, boolean | number | string> = {};
@@ -85,5 +121,5 @@ function format_number(
 		}
 	}
 
-	return new FormattableNumber(number.value, opt_values);
+	return new RuntimeNumber(value, opt_values);
 }

@@ -1,6 +1,7 @@
 import {test} from "tap";
 import {Message} from "../impl/model.js";
-import {formatMessage, FormattableNumber, formatToParts} from "../impl/runtime.js";
+import {RuntimeNumber} from "../impl/registry.js";
+import {formatMessage, formatToParts} from "../impl/runtime.js";
 
 test("Number formatting (English)", (tap) => {
 	// "Transferred {NUMBER $payloadSize STYLE unit UNIT megabyte}."
@@ -30,14 +31,14 @@ test("Number formatting (English)", (tap) => {
 
 	tap.equal(
 		formatMessage(message, {
-			payloadSize: new FormattableNumber(1.23),
+			payloadSize: new RuntimeNumber(1.23),
 		}),
 		"Transferred 1.23 MB."
 	);
 
 	tap.same(
 		formatToParts(message, {
-			payloadSize: new FormattableNumber(1.23),
+			payloadSize: new RuntimeNumber(1.23),
 		}),
 		[
 			{type: "literal", value: "Transferred "},
@@ -80,14 +81,14 @@ test("Number formatting (French)", (tap) => {
 
 	tap.equal(
 		formatMessage(message, {
-			payloadSize: new FormattableNumber(1.23),
+			payloadSize: new RuntimeNumber(1.23),
 		}),
 		"1,23 Mo transféré."
 	);
 
 	tap.same(
 		formatToParts(message, {
-			payloadSize: new FormattableNumber(1.23),
+			payloadSize: new RuntimeNumber(1.23),
 		}),
 		[
 			{type: "integer", value: "1"},

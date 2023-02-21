@@ -1,25 +1,28 @@
 import {test} from "tap";
-import {Message} from "../impl/model.js";
-import {
-	Formattable,
-	FormattingContext,
-	formatToParts,
-	OpaquePart,
-	RuntimeValue,
-} from "../impl/runtime.js";
+import {Message, StringLiteral} from "../impl/model.js";
+import {FormattingContext, formatToParts, OpaquePart, RuntimeValue} from "../impl/runtime.js";
 
 // We want to pass it into the translation and get it back out unformatted, in
 // the correct position in the sentence, via formatToParts.
 class SomeUnstringifiableClass {}
 
-// TODO(stasm): This is generic enough that it could be in impl/Formattable.ts.
-class WrappedValue extends RuntimeValue<SomeUnstringifiableClass> implements Formattable {
+class WrappedValue implements RuntimeValue {
+	public value: SomeUnstringifiableClass;
+
+	constructor(value: SomeUnstringifiableClass) {
+		this.value = value;
+	}
+
 	formatToString(ctx: FormattingContext): string {
 		throw new Error("Method not implemented.");
 	}
 
-	*formatToParts(ctx: FormattingContext): IterableIterator<OpaquePart> {
+	*formatToParts(ctx: FormattingContext): Generator<OpaquePart> {
 		yield {type: "opaque", value: this.value};
+	}
+
+	match(ctx: FormattingContext, key: StringLiteral) {
+		return false;
 	}
 }
 

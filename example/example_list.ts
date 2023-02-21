@@ -1,14 +1,11 @@
 import {test} from "tap";
-import {Argument, Message, Parameter} from "../impl/model.js";
-import {REGISTRY_FORMAT, REGISTRY_MATCH} from "../impl/registry.js";
+import {Argument, Message, Parameter, StringLiteral} from "../impl/model.js";
+import {MatchablePlural, REGISTRY_FORMAT, REGISTRY_MATCH} from "../impl/registry.js";
 import {
 	formatMessage,
-	Formattable,
-	FormattedPart,
 	FormattingContext,
 	formatToParts,
 	Matchable,
-	MatchablePlural,
 	RuntimeString,
 	RuntimeValue,
 } from "../impl/runtime.js";
@@ -23,27 +20,28 @@ class Person {
 	}
 }
 
-// TODO(stasm): This is generic enough that it could be in impl/Formattable.ts.
-class FormattableList<T extends {toString(): string}>
-	extends RuntimeValue<Array<T>>
-	implements Formattable
-{
+class RuntimeList<T extends {toString(): string}> implements RuntimeValue {
+	public value: Array<T>;
 	private opts: Intl.ListFormatOptions;
 
 	constructor(value: Array<T>, opts: Intl.ListFormatOptions = {}) {
-		super(value);
+		this.value = value;
 		this.opts = opts;
 	}
 
-	formatToString(ctx: FormattingContext): string {
+	formatToString(ctx: FormattingContext) {
 		// TODO(stasm): Cache ListFormat.
 		let lf = new Intl.ListFormat(ctx.locale, this.opts);
 		return lf.format(this.value.map((x) => x.toString()));
 	}
 
-	*formatToParts(ctx: FormattingContext): IterableIterator<FormattedPart> {
+	*formatToParts(ctx: FormattingContext) {
 		let lf = new Intl.ListFormat(ctx.locale, this.opts);
 		yield* lf.formatToParts(this.value.map((x) => x.toString()));
+	}
+
+	match(ctx: FormattingContext, key: StringLiteral) {
+		return false;
 	}
 }
 
@@ -53,7 +51,7 @@ REGISTRY_MATCH["PLURAL_LEN"] = function (
 	opts: Record<string, Parameter>
 ): Matchable {
 	let elements = ctx.toRuntimeValue(args[0]);
-	if (!(elements instanceof FormattableList)) {
+	if (!(elements instanceof RuntimeList)) {
 		throw new TypeError();
 	}
 
@@ -67,13 +65,13 @@ REGISTRY_FORMAT["PEOPLE_LIST"] = function (
 	ctx: FormattingContext,
 	args: Array<Argument>,
 	opts: Record<string, Parameter>
-): FormattableList<string> {
+): RuntimeList<string> {
 	if (ctx.locale !== "ro") {
 		throw new Error("Only Romanian supported");
 	}
 
 	let elements = ctx.toRuntimeValue(args[0]);
-	if (!(elements instanceof FormattableList)) {
+	if (!(elements instanceof RuntimeList)) {
 		throw new TypeError();
 	}
 
@@ -106,7 +104,7 @@ REGISTRY_FORMAT["PEOPLE_LIST"] = function (
 		throw new TypeError();
 	}
 
-	return new FormattableList(names, {
+	return new RuntimeList(names, {
 		// TODO(stasm): Add default options.
 		style: list_style.value as Intl.ListFormatStyle,
 		type: list_type.value as Intl.ListFormatType,
@@ -197,7 +195,7 @@ test("Fancy list formatting, first names only", (tap) => {
 
 	tap.equal(
 		formatMessage(message, {
-			names: new FormattableList([
+			names: new RuntimeList([
 				new Person("Maria", "Stanescu"),
 				new Person("Ileana", "Zamfir"),
 				new Person("Petre", "Belu"),
@@ -208,7 +206,7 @@ test("Fancy list formatting, first names only", (tap) => {
 
 	tap.same(
 		formatToParts(message, {
-			names: new FormattableList([
+			names: new RuntimeList([
 				new Person("Maria", "Stanescu"),
 				new Person("Ileana", "Zamfir"),
 				new Person("Petre", "Belu"),
@@ -288,7 +286,7 @@ test("Fancy list formatting, full names", (tap) => {
 
 	tap.equal(
 		formatMessage(message, {
-			names: new FormattableList([
+			names: new RuntimeList([
 				new Person("Maria", "Stanescu"),
 				new Person("Ileana", "Zamfir"),
 				new Person("Petre", "Belu"),
@@ -299,7 +297,7 @@ test("Fancy list formatting, full names", (tap) => {
 
 	tap.same(
 		formatToParts(message, {
-			names: new FormattableList([
+			names: new RuntimeList([
 				new Person("Maria", "Stanescu"),
 				new Person("Ileana", "Zamfir"),
 				new Person("Petre", "Belu"),

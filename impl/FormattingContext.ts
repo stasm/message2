@@ -1,19 +1,18 @@
-import {Formattable, FormattableString, isFormattable} from "./Formattable.js";
-import {Matchable} from "./Matchable.js";
 import {Message, Parameter, PatternElement, Selector, StringLiteral, Variant} from "./model.js";
 import {REGISTRY_FORMAT, REGISTRY_MATCH} from "./registry.js";
-import {RuntimeString, RuntimeValue} from "./RuntimeValue.js";
+import {RuntimeString} from "./RuntimeString.js";
+import {Formattable, Matchable, RuntimeValue} from "./RuntimeValue.js";
 
 // Resolution context for a single formatMessage() call.
 
 export class FormattingContext {
 	locale: string;
 	message: Message;
-	vars: Record<string, RuntimeValue<unknown>>;
+	vars: Record<string, RuntimeValue>;
 	visited: WeakSet<Array<PatternElement>>;
 	// TODO(stasm): expose cached formatters, etc.
 
-	constructor(locale: string, message: Message, vars: Record<string, RuntimeValue<unknown>>) {
+	constructor(locale: string, message: Message, vars: Record<string, RuntimeValue>) {
 		this.locale = locale;
 		this.message = message;
 		this.vars = vars;
@@ -39,16 +38,12 @@ export class FormattingContext {
 		for (let element of pattern) {
 			switch (element.type) {
 				case "StringLiteral":
-					yield new FormattableString(element.value);
+					yield new RuntimeString(element.value);
 					continue;
 				case "VariableReference": {
 					let value = this.vars[element.name];
-					if (isFormattable(value)) {
-						yield value;
-						continue;
-					} else {
-						throw new TypeError("Invalid variable type.");
-					}
+					yield value;
+					continue;
 				}
 				case "FunctionCall": {
 					let callable = REGISTRY_FORMAT[element.name];
@@ -104,7 +99,7 @@ export class FormattingContext {
 		throw new RangeError("No variant matched the selectors.");
 	}
 
-	toRuntimeValue(node: Parameter): RuntimeValue<unknown> {
+	toRuntimeValue(node: Parameter): RuntimeValue {
 		switch (node.type) {
 			case "StringLiteral":
 				return new RuntimeString(node.value);
