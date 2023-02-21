@@ -1,43 +1,20 @@
 import {test} from "tap";
-import {Message} from "../impl/model.js";
+import {MessageFormat} from "../impl/index.js";
 import {RuntimeNumber} from "../impl/registry.js";
-import {formatMessage, formatToParts} from "../impl/runtime.js";
 
 test("Number formatting (English)", (tap) => {
-	// "Transferred {NUMBER $payloadSize STYLE unit UNIT megabyte}."
-	let message: Message = {
-		lang: "en",
-		id: "transferred",
-		selectors: [],
-		variants: [
-			{
-				keys: [],
-				value: [
-					{type: "StringLiteral", value: "Transferred "},
-					{
-						type: "FunctionCall",
-						name: "NUMBER",
-						args: [{type: "VariableReference", name: "payloadSize"}],
-						opts: {
-							STYLE: {type: "StringLiteral", value: "unit"},
-							UNIT: {type: "StringLiteral", value: "megabyte"},
-						},
-					},
-					{type: "StringLiteral", value: "."},
-				],
-			},
-		],
-	};
-
+	let message = new MessageFormat(
+		"en-US",
+		"{Transferred {$payloadSize :number style=unit unit=megabyte}.}"
+	);
 	tap.equal(
-		formatMessage(message, {
+		message.formatMessage({
 			payloadSize: new RuntimeNumber(1.23),
 		}),
 		"Transferred 1.23 MB."
 	);
-
 	tap.same(
-		formatToParts(message, {
+		message.formatToParts({
 			payloadSize: new RuntimeNumber(1.23),
 		}),
 		[
@@ -50,55 +27,32 @@ test("Number formatting (English)", (tap) => {
 			{type: "literal", value: "."},
 		]
 	);
-
 	tap.end();
 });
 
 test("Number formatting (French)", (tap) => {
-	// "{NUMBER $payloadSize STYLE unit UNIT megabyte} transféré."
-	let message: Message = {
-		lang: "fr",
-		id: "transferred",
-		selectors: [],
-		variants: [
-			{
-				keys: [],
-				value: [
-					{
-						type: "FunctionCall",
-						name: "NUMBER",
-						args: [{type: "VariableReference", name: "payloadSize"}],
-						opts: {
-							STYLE: {type: "StringLiteral", value: "unit"},
-							UNIT: {type: "StringLiteral", value: "megabyte"},
-						},
-					},
-					{type: "StringLiteral", value: " transféré."},
-				],
-			},
-		],
-	};
-
+	let message = new MessageFormat(
+		"fr",
+		"{{$payloadSize :number style=unit unit=megabyte} transféré.}"
+	);
 	tap.equal(
-		formatMessage(message, {
+		message.formatMessage({
 			payloadSize: new RuntimeNumber(1.23),
 		}),
 		"1,23 Mo transféré."
 	);
-
 	tap.same(
-		formatToParts(message, {
+		message.formatToParts({
 			payloadSize: new RuntimeNumber(1.23),
 		}),
 		[
 			{type: "integer", value: "1"},
 			{type: "decimal", value: ","},
 			{type: "fraction", value: "23"},
-			{type: "literal", value: " "},
+			{type: "literal", value: " "}, // U+202F
 			{type: "unit", value: "Mo"},
 			{type: "literal", value: " transféré."},
 		]
 	);
-
 	tap.end();
 });

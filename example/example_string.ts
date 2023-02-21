@@ -1,37 +1,16 @@
 import {test} from "tap";
-import {Message} from "../impl/model.js";
-import {formatMessage, formatToParts, RuntimeString} from "../impl/runtime.js";
+import {MessageFormat, RuntimeString} from "../impl/index.js";
 
 test("String interpolation", (tap) => {
-	// "Hello, {$userName}!"
-	let message: Message = {
-		lang: "en",
-		id: "transferred",
-		selectors: [],
-		variants: [
-			{
-				keys: [],
-				value: [
-					{type: "StringLiteral", value: "Hello, "},
-					{
-						type: "VariableReference",
-						name: "userName",
-					},
-					{type: "StringLiteral", value: "!"},
-				],
-			},
-		],
-	};
-
+	let message = new MessageFormat("en-US", "{Hello, {$userName}!}");
 	tap.equal(
-		formatMessage(message, {
+		message.formatMessage({
 			userName: new RuntimeString("Alice"),
 		}),
 		"Hello, Alice!"
 	);
-
 	tap.same(
-		formatToParts(message, {
+		message.formatToParts({
 			userName: new RuntimeString("Bob"),
 		}),
 		[
@@ -40,6 +19,5 @@ test("String interpolation", (tap) => {
 			{type: "literal", value: "!"},
 		]
 	);
-
 	tap.end();
 });

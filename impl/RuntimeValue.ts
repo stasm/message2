@@ -1,5 +1,5 @@
+import * as ast from "../syntax/ast.js";
 import {FormattingContext} from "./FormattingContext.js";
-import {VariantKey} from "./model.js";
 
 export type RuntimeValue = Formattable & Matchable;
 export type RuntimePart = FormattedPart | OpaquePart;
@@ -10,7 +10,7 @@ export interface Formattable {
 }
 
 export interface Matchable {
-	match(ctx: FormattingContext, key: VariantKey): boolean;
+	match(ctx: FormattingContext, key: ast.Literal): boolean;
 }
 
 export interface FormattedPart {

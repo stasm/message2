@@ -1,33 +1,36 @@
+import * as ast from "../syntax/ast.js";
 import {FormattingContext} from "./FormattingContext.js";
-import {Argument, Parameter, VariantKey} from "./model.js";
 import {RuntimeString} from "./RuntimeString.js";
 import {Formattable, Matchable, RuntimeValue} from "./RuntimeValue.js";
 
 export type FormattingFunc = (
 	ctx: FormattingContext,
-	args: Array<Argument>,
-	opts: Record<string, Parameter>
+	arg: ast.ExpressionOperand | null,
+	opts: ast.Options
 ) => Formattable;
 
 export type MatchingFunc = (
 	ctx: FormattingContext,
-	args: Array<Argument>,
-	opts: Record<string, Parameter>
+	arg: ast.ExpressionOperand | null,
+	opts: ast.Options
 ) => Matchable;
 
 // The built-in matching functions.
 export const REGISTRY_MATCH: Record<string, MatchingFunc> = {
-	CHOOSE: select_choose,
-	PLURAL: select_plural,
+	choose: select_choose,
+	plural: select_plural,
 };
 
 function select_choose(
 	ctx: FormattingContext,
-	args: Array<Argument>,
-	opts: Record<string, Parameter>
+	arg: ast.ExpressionOperand | null,
+	opts: ast.Options
 ): Matchable {
-	let value = ctx.toRuntimeValue(args[0]);
+	if (arg === null) {
+		throw new TypeError();
+	}
 
+	let value = ctx.toRuntimeValue(arg);
 	if (value instanceof RuntimeString) {
 		return value;
 	}
@@ -44,17 +47,21 @@ export class MatchablePlural implements Matchable {
 		this.count = count;
 	}
 
-	match(ctx: FormattingContext, key: VariantKey): boolean {
+	match(ctx: FormattingContext, key: ast.Literal): boolean {
 		return this.value === key.value;
 	}
 }
 
 function select_plural(
 	ctx: FormattingContext,
-	args: Array<Argument>,
-	opts: Record<string, Parameter>
+	arg: ast.ExpressionOperand | null,
+	opts: ast.Options
 ): Matchable {
-	let count = ctx.toRuntimeValue(args[0]);
+	if (arg === null) {
+		throw new TypeError();
+	}
+
+	let count = ctx.toRuntimeValue(arg);
 	if (!(count instanceof RuntimeString)) {
 		throw new TypeError();
 	}
@@ -69,7 +76,7 @@ function select_plural(
 
 // The built-in formatting functions.
 export const REGISTRY_FORMAT: Record<string, FormattingFunc> = {
-	NUMBER: format_number,
+	number: format_number,
 };
 export class RuntimeNumber implements RuntimeValue {
 	public value: number;
@@ -89,33 +96,40 @@ export class RuntimeNumber implements RuntimeValue {
 		yield* new Intl.NumberFormat(ctx.locale, this.opts).formatToParts(this.value);
 	}
 
-	match(ctx: FormattingContext, key: VariantKey) {
+	match(ctx: FormattingContext, key: ast.Literal) {
 		return this.value === parseInt(key.value);
 	}
 }
 
 function format_number(
 	ctx: FormattingContext,
-	args: Array<Argument>,
-	opts: Record<string, Parameter>
+	arg: ast.ExpressionOperand | null,
+	opts: ast.Options
 ): RuntimeNumber {
-	let number = ctx.toRuntimeValue(args[0]);
-	if (!(number instanceof RuntimeString)) {
+	if (arg === null) {
 		throw new TypeError();
 	}
 
-	let value = parseInt(number.value);
+	let argval = ctx.toRuntimeValue(arg);
+	let value: number;
+	if (argval instanceof RuntimeNumber) {
+		value = argval.value;
+	} else if (argval instanceof RuntimeString) {
+		value = parseInt(argval.value);
+	} else {
+		throw new TypeError();
+	}
 
 	// TODO(stasm): Add more options.
 	let opt_values: Record<string, boolean | number | string> = {};
-	if ("STYLE" in opts) {
-		let value = ctx.toRuntimeValue(opts["STYLE"]);
+	if ("style" in opts) {
+		let value = ctx.toRuntimeValue(opts["style"]);
 		if (value instanceof RuntimeString) {
 			opt_values["style"] = value.value;
 		}
 	}
-	if ("UNIT" in opts) {
-		let value = ctx.toRuntimeValue(opts["UNIT"]);
+	if ("unit" in opts) {
+		let value = ctx.toRuntimeValue(opts["unit"]);
 		if (value instanceof RuntimeString) {
 			opt_values["unit"] = value.value;
 		}

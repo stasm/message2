@@ -16,7 +16,7 @@ export class Parser extends ast.Message {
 		this.tokens = new Lexer(source)[Symbol.iterator]();
 	}
 
-	parse() {
+	parse(): ast.Message {
 		let current: tokens.Token | undefined = this.#next_token();
 		while (current instanceof tokens.Keyword && current.value === "let") {
 			let local = this.#parse_local();
@@ -28,10 +28,7 @@ export class Parser extends ast.Message {
 			let pattern = this.#parse_pattern();
 			let variant = new ast.Variant([], pattern);
 			this.variants.push(variant);
-			return this;
-		}
-
-		if (current instanceof tokens.Keyword && current.value === "match") {
+		} else if (current instanceof tokens.Keyword && current.value === "match") {
 			current = this.#next_token();
 			while (current instanceof tokens.Punctuator && current.value === "{") {
 				current = this.#next_token();
@@ -44,11 +41,12 @@ export class Parser extends ast.Message {
 				this.variants.push(variant);
 				current = this.#next_token_or_end();
 			}
-			return this;
 		}
 
 		current = this.#next_token_or_end();
-		if (current !== undefined) {
+		if (current === undefined) {
+			return this;
+		} else {
 			throw new SyntaxError("Expected end of input");
 		}
 	}

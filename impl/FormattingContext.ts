@@ -1,4 +1,4 @@
-import {Message, Parameter, PatternElement, Selector, StringLiteral, Variant} from "./model.js";
+import * as ast from "../syntax/ast.js";
 import {REGISTRY_FORMAT, REGISTRY_MATCH} from "./registry.js";
 import {RuntimeString} from "./RuntimeString.js";
 import {Formattable, Matchable, RuntimeValue} from "./RuntimeValue.js";
@@ -7,19 +7,17 @@ import {Formattable, Matchable, RuntimeValue} from "./RuntimeValue.js";
 
 export class FormattingContext {
 	locale: string;
-	message: Message;
 	vars: Record<string, RuntimeValue>;
-	visited: WeakSet<Array<PatternElement>>;
+	visited: WeakSet<ast.Pattern>;
 	// TODO(stasm): expose cached formatters, etc.
 
-	constructor(locale: string, message: Message, vars: Record<string, RuntimeValue>) {
+	constructor(locale: string, vars: Record<string, RuntimeValue>) {
 		this.locale = locale;
-		this.message = message;
 		this.vars = vars;
 		this.visited = new WeakSet();
 	}
 
-	formatPattern(pattern: Array<PatternElement>): string {
+	formatPattern(pattern: ast.Pattern): string {
 		let output = "";
 		for (let value of this.resolvePattern(pattern)) {
 			output += value.formatToString(this);
@@ -27,7 +25,7 @@ export class FormattingContext {
 		return output;
 	}
 
-	*resolvePattern(pattern: Array<PatternElement>): IterableIterator<Formattable> {
+	*resolvePattern(pattern: ast.Pattern): IterableIterator<Formattable> {
 		if (this.visited.has(pattern)) {
 			throw new RangeError("Recursive reference to a variant value.");
 		}
@@ -35,21 +33,23 @@ export class FormattingContext {
 		this.visited.add(pattern);
 
 		let result = "";
-		for (let element of pattern) {
-			switch (element.type) {
-				case "StringLiteral":
-					yield new RuntimeString(element.value);
-					continue;
-				case "VariableReference": {
-					let value = this.vars[element.name];
-					yield value;
-					continue;
+		for (let element of pattern.elements) {
+			if (element instanceof ast.Text) {
+				yield new RuntimeString(element.value);
+			} else if (element instanceof ast.FunctionExpression) {
+				let callable = REGISTRY_FORMAT[element.name];
+				yield callable(this, null, element.opts);
+			} else if (element instanceof ast.OperandExpression) {
+				if (element.func) {
+					let func = REGISTRY_FORMAT[element.func.name];
+					yield func(this, element.arg, element.func.opts);
+				} else if (element.arg instanceof ast.VariableReference) {
+					yield this.vars[element.arg.name];
+				} else {
+					yield new RuntimeString(element.arg.value);
 				}
-				case "FunctionCall": {
-					let callable = REGISTRY_FORMAT[element.name];
-					yield callable(this, element.args, element.opts);
-					continue;
-				}
+			} else {
+				// TODO(stasm): markup
 			}
 		}
 
@@ -57,56 +57,55 @@ export class FormattingContext {
 		return result;
 	}
 
-	selectVariant(variants: Array<Variant>, selectors: Array<Selector>): Variant {
-		let selector_values: Array<Matchable> = [];
-		let selector_defaults: Array<StringLiteral> = [];
-
-		for (let selector of selectors) {
-			switch (selector.expr.type) {
-				case "FunctionCall": {
-					let callable = REGISTRY_MATCH[selector.expr.name];
-					let value = callable(this, selector.expr.args, selector.expr.opts);
-					selector_values.push(value);
-					selector_defaults.push(selector.default);
-					break;
-				}
-				case "VariableReference": {
-					// TODO(stasm): Should we allow stand-alone variables as selectors?
-					throw new TypeError("Invalid selector type.");
-				}
-				default:
-					// TODO(stasm): Should we allow Literals as selectors?
-					throw new TypeError("Invalid selector type.");
+	selectVariant(variants: Array<ast.Variant>, selectors: Array<ast.Expression>): ast.Variant {
+		let resolved_selectors: Array<Matchable> = [];
+		for (let expression of selectors) {
+			if (expression instanceof ast.FunctionExpression) {
+				let func = REGISTRY_MATCH[expression.name];
+				let value = func(this, null, expression.opts);
+				resolved_selectors.push(value);
+			} else if (expression.func) {
+				let func = REGISTRY_MATCH[expression.func.name];
+				let value = func(this, expression.arg, expression.func.opts);
+				resolved_selectors.push(value);
+			} else if (expression.arg instanceof ast.VariableReference) {
+				let value = this.vars[expression.arg.name];
+				resolved_selectors.push(value);
+			} else {
+				let value = new RuntimeString(expression.arg.value);
+				resolved_selectors.push(value);
 			}
 		}
 
-		for (let variant of variants) {
-			// When keys is an empty array, every() always returns true. This is
-			// used single-variant messages to return their only variant.
-			if (
-				variant.keys.every(
-					(key, idx) =>
-						// Key matches corresponding selector value…
-						selector_values[idx].match(this, key) ||
-						// … or the corresponding default.
-						key.value === selector_defaults[idx].value
-				)
-			) {
-				return variant;
+		to_next_variant: for (let variant of variants) {
+			to_next_key: for (let i = 0; i < resolved_selectors.length; i++) {
+				let key = variant.keys[i];
+				if (key instanceof ast.Star) {
+					// The default key always matches.
+					continue to_next_key;
+				}
+				if (resolved_selectors[i].match(this, key)) {
+					continue to_next_key;
+				}
+
+				// If a key doesn't match, discard the current variant.
+				continue to_next_variant;
 			}
+
+			// All keys match.
+			return variant;
 		}
 
 		throw new RangeError("No variant matched the selectors.");
 	}
 
-	toRuntimeValue(node: Parameter): RuntimeValue {
-		switch (node.type) {
-			case "StringLiteral":
-				return new RuntimeString(node.value);
-			case "VariableReference":
-				return this.vars[node.name];
-			default:
-				throw new TypeError("Invalid node type.");
+	toRuntimeValue(node: ast.SyntaxNode): RuntimeValue {
+		if (node instanceof ast.Literal) {
+			return new RuntimeString(node.value);
 		}
+		if (node instanceof ast.VariableReference) {
+			return this.vars[node.name];
+		}
+		throw new TypeError("Invalid node type.");
 	}
 }

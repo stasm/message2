@@ -3,14 +3,14 @@ export abstract class SyntaxNode {
 }
 
 export class Message extends SyntaxNode {
-	kind = "Message";
+	kind = "Message" as const;
 	locals: Array<Local> = [];
 	selectors: Array<Expression> = [];
 	variants: Array<Variant> = [];
 }
 
 export class Local extends SyntaxNode {
-	kind = "Local";
+	kind = "Local" as const;
 	name: string;
 	expr: Expression;
 
@@ -24,7 +24,7 @@ export class Local extends SyntaxNode {
 export type VariantKey = Literal | Star;
 
 export class Variant extends SyntaxNode {
-	kind = "Variant";
+	kind = "Variant" as const;
 	keys: Array<VariantKey>;
 	value: Pattern;
 
@@ -39,7 +39,7 @@ export type Placeholder = Expression | MarkupOpen | MarkupClose;
 export type PatternElement = Text | Placeholder;
 
 export class Pattern extends SyntaxNode {
-	kind = "Pattern";
+	kind = "Pattern" as const;
 	elements: Array<PatternElement>;
 
 	constructor(elements: Array<PatternElement>) {
@@ -49,14 +49,14 @@ export class Pattern extends SyntaxNode {
 }
 
 export type Expression = OperandExpression | FunctionExpression;
-export type ExpressionArgument = Literal | VariableReference;
+export type ExpressionOperand = Literal | VariableReference;
 
 export class OperandExpression extends SyntaxNode {
-	kind = "OperandExpression";
-	arg: ExpressionArgument;
+	kind = "OperandExpression" as const;
+	arg: ExpressionOperand;
 	func: FunctionExpression | null;
 
-	constructor(arg: ExpressionArgument, func: FunctionExpression | null) {
+	constructor(arg: ExpressionOperand, func: FunctionExpression | null) {
 		super();
 		this.arg = arg;
 		this.func = func;
@@ -67,7 +67,7 @@ export type OptionValue = Literal | VariableReference;
 export type Options = Record<string, OptionValue>;
 
 export class FunctionExpression extends SyntaxNode {
-	kind = "FunctionExpression";
+	kind = "FunctionExpression" as const;
 	name: string;
 	opts: Options;
 
@@ -79,7 +79,7 @@ export class FunctionExpression extends SyntaxNode {
 }
 
 export class MarkupOpen extends SyntaxNode {
-	kind = "MarkupOpen";
+	kind = "MarkupOpen" as const;
 	name: string;
 	opts: Options;
 
@@ -91,7 +91,7 @@ export class MarkupOpen extends SyntaxNode {
 }
 
 export class MarkupClose extends SyntaxNode {
-	kind = "MarkupClose";
+	kind = "MarkupClose" as const;
 	name: string;
 
 	constructor(name: string) {
@@ -101,7 +101,7 @@ export class MarkupClose extends SyntaxNode {
 }
 
 export class VariableReference extends SyntaxNode {
-	kind = "VariableReference";
+	kind = "VariableReference" as const;
 	name: string;
 
 	constructor(name: string) {
@@ -111,7 +111,7 @@ export class VariableReference extends SyntaxNode {
 }
 
 export class Text extends SyntaxNode {
-	kind = "Text";
+	kind = "Text" as const;
 	value: string;
 
 	constructor(value: string) {
@@ -121,7 +121,7 @@ export class Text extends SyntaxNode {
 }
 
 export class Literal extends SyntaxNode {
-	kind = "Literal";
+	kind = "Literal" as const;
 	value: string;
 
 	constructor(value: string) {
@@ -131,5 +131,5 @@ export class Literal extends SyntaxNode {
 }
 
 export class Star extends SyntaxNode {
-	kind = "Star";
+	kind = "Star" as const;
 }
