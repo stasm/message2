@@ -135,8 +135,8 @@ export class Parser extends ast.Message {
 		}
 
 		let func: ast.FunctionExpression | null;
-		let next = this.#next_token();
-		if (next instanceof tokens.FunctionName) {
+		current = this.#next_token();
+		if (current instanceof tokens.FunctionName) {
 			let opts = this.#parse_options();
 			func = new ast.FunctionExpression(current.value, opts);
 		} else {

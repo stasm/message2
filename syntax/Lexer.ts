@@ -146,7 +146,8 @@ export class Lexer {
 	}
 
 	*#emit_pattern(current: Atom) {
-		yield new tokens.Punctuator(current.value);
+		yield this.#expect_punctuator("{", current);
+
 		let text_acc = "";
 		while (true) {
 			let current = this.#next_include_whitespace();
