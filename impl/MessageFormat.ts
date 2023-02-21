@@ -14,7 +14,7 @@ export class MessageFormat {
 		this.parsed = new Parser(source).parse();
 	}
 
-	formatMessage(vars: Record<string, RuntimeValue>): string {
+	format(vars: Record<string, RuntimeValue>): string {
 		let ctx = new FormattingContext(this.locale, vars);
 		let variant = ctx.selectVariant(this.parsed.variants, this.parsed.selectors);
 		return ctx.formatPattern(variant.pattern);

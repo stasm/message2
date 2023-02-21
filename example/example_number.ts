@@ -8,7 +8,7 @@ test("Number formatting (English)", (tap) => {
 		"{Transferred {$payloadSize :number style=unit unit=megabyte}.}"
 	);
 	tap.equal(
-		message.formatMessage({
+		message.format({
 			payloadSize: new RuntimeNumber(1.23),
 		}),
 		"Transferred 1.23 MB."
@@ -36,7 +36,7 @@ test("Number formatting (French)", (tap) => {
 		"{{$payloadSize :number style=unit unit=megabyte} transféré.}"
 	);
 	tap.equal(
-		message.formatMessage({
+		message.format({
 			payloadSize: new RuntimeNumber(1.23),
 		}),
 		"1,23 Mo transféré."
