@@ -1,21 +1,18 @@
 import {test} from "tap";
-import {Argument, Message, Parameter} from "../impl/model.js";
+import {Formattable, FormattingContext, MessageFormat, RuntimeString} from "../impl/index.js";
 import {REGISTRY_FORMAT} from "../impl/registry.js";
-import {
-	formatMessage,
-	Formattable,
-	FormattingContext,
-	formatToParts,
-	RuntimeString,
-} from "../impl/runtime.js";
+import * as ast from "../syntax/ast.js";
 import {get_term} from "./glossary.js";
 
-REGISTRY_FORMAT["NOUN"] = function get_noun(
+REGISTRY_FORMAT["noun"] = function get_noun(
 	ctx: FormattingContext,
-	args: Array<Argument>,
-	opts: Record<string, Parameter>
+	arg: ast.Operand | null,
+	opts: ast.Options
 ): Formattable {
-	let noun_name = ctx.toRuntimeValue(args[0]);
+	if (arg === null) {
+		throw new TypeError();
+	}
+	let noun_name = ctx.resolveOperand(arg);
 	if (!(noun_name instanceof RuntimeString)) {
 		throw new TypeError();
 	}
@@ -23,20 +20,30 @@ REGISTRY_FORMAT["NOUN"] = function get_noun(
 	let noun = get_term(ctx.locale, noun_name.value);
 	let value = noun["singular_nominative"].toString();
 
-	let capitalized = ctx.toRuntimeValue(opts["CAPITALIZED"]);
-	if (capitalized) {
-		return new RuntimeString(value[0].toUpperCase() + value.slice(1));
+	if (opts["lettercase"]) {
+		let lettercase = ctx.resolveOperand(opts["lettercase"]);
+		if (lettercase instanceof RuntimeString) {
+			if (lettercase.value === "capitalized") {
+				// TODO(stasm): Support surrogates and astral codepoints.
+				return new RuntimeString(value[0].toUpperCase() + value.slice(1));
+			}
+		} else {
+			throw new TypeError();
+		}
 	}
 
 	return new RuntimeString(value);
 };
 
-REGISTRY_FORMAT["ADJECTIVE"] = function get_adjective(
+REGISTRY_FORMAT["adjective"] = function get_adjective(
 	ctx: FormattingContext,
-	args: Array<Argument>,
-	opts: Record<string, Parameter>
+	arg: ast.Operand | null,
+	opts: ast.Options
 ): Formattable {
-	let adj_name = ctx.toRuntimeValue(args[0]);
+	if (arg === null) {
+		throw new TypeError();
+	}
+	let adj_name = ctx.resolveOperand(arg);
 	if (!(adj_name instanceof RuntimeString)) {
 		throw new TypeError();
 	}
@@ -47,7 +54,7 @@ REGISTRY_FORMAT["ADJECTIVE"] = function get_adjective(
 			return new RuntimeString(adjective["nominative"].toString());
 		}
 		case "pl": {
-			let noun_name = ctx.toRuntimeValue(opts["ACCORD_WITH"]);
+			let noun_name = ctx.resolveOperand(opts["accord"]);
 			if (!(noun_name instanceof RuntimeString)) {
 				throw new TypeError();
 			}
@@ -61,94 +68,17 @@ REGISTRY_FORMAT["ADJECTIVE"] = function get_adjective(
 	}
 };
 
-REGISTRY_FORMAT["ACTOR"] = function get_noun(
-	ctx: FormattingContext,
-	args: Array<Argument>,
-	opts: Record<string, Parameter>
-): Formattable {
-	let name = ctx.toRuntimeValue(args[0]);
-	if (!(name instanceof RuntimeString)) {
-		throw new TypeError();
-	}
-
-	let term = get_term(ctx.locale, "actor_" + name.value);
-
-	switch (ctx.locale) {
-		case "en": {
-			let value: string;
-			if (ctx.toRuntimeValue(opts["DEFINITE"])) {
-				value = term["definite"].toString();
-			} else if (ctx.toRuntimeValue(opts["INDEFINITE"])) {
-				value = term["indefinite"].toString();
-			} else {
-				value = term["bare"].toString();
-			}
-
-			if (ctx.toRuntimeValue(opts["CAPITALIZED"])) {
-				return new RuntimeString(value[0].toUpperCase() + value.slice(1));
-			}
-
-			return new RuntimeString(value);
-		}
-		case "pl": {
-			let declension = ctx.toRuntimeValue(opts["CASE"]);
-			if (!(declension instanceof RuntimeString)) {
-				throw new TypeError();
-			}
-
-			let value = term[declension.value].toString();
-
-			let capitalized = ctx.toRuntimeValue(opts["CAPITALIZED"]);
-			if (capitalized) {
-				return new RuntimeString(value[0].toUpperCase() + value.slice(1));
-			}
-
-			return new RuntimeString(value);
-		}
-		default:
-			return new RuntimeString(name.value);
-	}
-};
-
 test("NOUN is ADJECTIVE (English)", (tap) => {
-	let message: Message = {
-		lang: "en",
-		id: "accord",
-		selectors: [],
-		variants: [
-			{
-				keys: [],
-				value: [
-					{type: "StringLiteral", value: "The "},
-					{
-						type: "FunctionCall",
-						name: "NOUN",
-						args: [{type: "VariableReference", name: "item"}],
-						opts: {},
-					},
-					{type: "StringLiteral", value: " is "},
-					{
-						type: "FunctionCall",
-						name: "ADJECTIVE",
-						args: [{type: "VariableReference", name: "color"}],
-						opts: {},
-					},
-					{type: "StringLiteral", value: "."},
-				],
-			},
-		],
-	};
-
+	let message = new MessageFormat("en", "{The {$item :noun} is {$color :adjective}.}");
 	tap.equal(
-		formatMessage(message, {
+		message.format({
 			item: new RuntimeString("t-shirt"),
 			color: new RuntimeString("red"),
 		}),
 		"The T-shirt is red."
 	);
-
 	tap.same(
-		formatToParts(message, {
+		message.formatToParts({
 			item: new RuntimeString("t-shirt"),
 			color: new RuntimeString("red"),
 		}),
@@ -160,52 +90,23 @@ test("NOUN is ADJECTIVE (English)", (tap) => {
 			{type: "literal", value: "."},
 		]
 	);
-
 	tap.end();
 });
 
 test("NOUN is ADJECTIVE (Polish; requires according the gender of the adjective)", (tap) => {
-	let message: Message = {
-		lang: "pl",
-		id: "accord",
-		selectors: [],
-		variants: [
-			{
-				keys: [],
-				value: [
-					{
-						type: "FunctionCall",
-						name: "NOUN",
-						args: [{type: "VariableReference", name: "item"}],
-						opts: {
-							CAPITALIZED: {type: "StringLiteral", value: "yes"},
-						},
-					},
-					{type: "StringLiteral", value: " jest "},
-					{
-						type: "FunctionCall",
-						name: "ADJECTIVE",
-						args: [{type: "VariableReference", name: "color"}],
-						opts: {
-							ACCORD_WITH: {type: "VariableReference", name: "item"},
-						},
-					},
-					{type: "StringLiteral", value: "."},
-				],
-			},
-		],
-	};
-
+	let message = new MessageFormat(
+		"pl",
+		"{{$item :noun lettercase=capitalized} jest {$color :adjective accord=$item}.}"
+	);
 	tap.equal(
-		formatMessage(message, {
+		message.format({
 			item: new RuntimeString("t-shirt"),
 			color: new RuntimeString("red"),
 		}),
 		"Tiszert jest czerwony."
 	);
-
 	tap.same(
-		formatToParts(message, {
+		message.formatToParts({
 			item: new RuntimeString("t-shirt"),
 			color: new RuntimeString("red"),
 		}),
@@ -216,184 +117,5 @@ test("NOUN is ADJECTIVE (Polish; requires according the gender of the adjective)
 			{type: "literal", value: "."},
 		]
 	);
-
-	tap.end();
-});
-
-test("Subject verb OBJECT (English)", (tap) => {
-	let message: Message = {
-		lang: "en",
-		id: "you-see",
-		selectors: [],
-		variants: [
-			{
-				keys: [],
-				value: [
-					{type: "StringLiteral", value: "You see "},
-					{
-						type: "FunctionCall",
-						name: "ACTOR",
-						args: [{type: "VariableReference", name: "monster"}],
-						opts: {
-							INDEFINITE: {type: "StringLiteral", value: "yes"},
-						},
-					},
-					{type: "StringLiteral", value: "!"},
-				],
-			},
-		],
-	};
-
-	tap.equal(
-		formatMessage(message, {
-			monster: new RuntimeString("dinosaur"),
-		}),
-		"You see a dinosaur!"
-	);
-
-	tap.same(
-		formatToParts(message, {
-			monster: new RuntimeString("dinosaur"),
-		}),
-		[
-			{type: "literal", value: "You see "},
-			{type: "literal", value: "a dinosaur"},
-			{type: "literal", value: "!"},
-		]
-	);
-
-	tap.end();
-});
-
-test("Subject verb OBJECT (Polish; requires the accusative case)", (tap) => {
-	let message: Message = {
-		lang: "pl",
-		id: "you-see",
-		selectors: [],
-		variants: [
-			{
-				keys: [],
-				value: [
-					{type: "StringLiteral", value: "Widzisz "},
-					{
-						type: "FunctionCall",
-						name: "ACTOR",
-						args: [{type: "VariableReference", name: "monster"}],
-						opts: {
-							CASE: {type: "StringLiteral", value: "accusative"},
-						},
-					},
-					{type: "StringLiteral", value: "!"},
-				],
-			},
-		],
-	};
-
-	tap.equal(
-		formatMessage(message, {
-			monster: new RuntimeString("dinosaur"),
-		}),
-		"Widzisz dinozaura!"
-	);
-
-	tap.same(
-		formatToParts(message, {
-			monster: new RuntimeString("dinosaur"),
-		}),
-		[
-			{type: "literal", value: "Widzisz "},
-			{type: "literal", value: "dinozaura"},
-			{type: "literal", value: "!"},
-		]
-	);
-
-	tap.end();
-});
-
-test("SUBJECT verb (English)", (tap) => {
-	let message: Message = {
-		lang: "en",
-		id: "they-wave",
-		selectors: [],
-		variants: [
-			{
-				keys: [],
-				value: [
-					{
-						type: "FunctionCall",
-						name: "ACTOR",
-						args: [{type: "VariableReference", name: "monster"}],
-						opts: {
-							DEFINITE: {type: "StringLiteral", value: "yes"},
-							CAPITALIZED: {type: "StringLiteral", value: "yes"},
-						},
-					},
-					{type: "StringLiteral", value: " waves at you!"},
-				],
-			},
-		],
-	};
-
-	tap.equal(
-		formatMessage(message, {
-			monster: new RuntimeString("ogre"),
-		}),
-		"The ogre waves at you!"
-	);
-
-	tap.same(
-		formatToParts(message, {
-			monster: new RuntimeString("ogre"),
-		}),
-		[
-			{type: "literal", value: "The ogre"},
-			{type: "literal", value: " waves at you!"},
-		]
-	);
-
-	tap.end();
-});
-
-test("SUBJECT verb (Polish)", (tap) => {
-	let message: Message = {
-		lang: "pl",
-		id: "they-wave",
-		selectors: [],
-		variants: [
-			{
-				keys: [],
-				value: [
-					{
-						type: "FunctionCall",
-						name: "ACTOR",
-						args: [{type: "VariableReference", name: "monster"}],
-						opts: {
-							CASE: {type: "StringLiteral", value: "nominative"},
-							CAPITALIZED: {type: "StringLiteral", value: "yes"},
-						},
-					},
-					{type: "StringLiteral", value: " macha do ciebie!"},
-				],
-			},
-		],
-	};
-
-	tap.equal(
-		formatMessage(message, {
-			monster: new RuntimeString("ogre"),
-		}),
-		"Ogr macha do ciebie!"
-	);
-
-	tap.same(
-		formatToParts(message, {
-			monster: new RuntimeString("ogre"),
-		}),
-		[
-			{type: "literal", value: "Ogr"},
-			{type: "literal", value: " macha do ciebie!"},
-		]
-	);
-
 	tap.end();
 });

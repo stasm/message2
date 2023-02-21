@@ -1,6 +1,6 @@
 import {test} from "tap";
-import {Message, StringLiteral} from "../impl/model.js";
-import {FormattingContext, formatToParts, OpaquePart, RuntimeValue} from "../impl/runtime.js";
+import {FormattingContext, MessageFormat, OpaquePart, RuntimeValue} from "../impl/index.js";
+import * as ast from "../syntax/ast.js";
 
 // We want to pass it into the translation and get it back out unformatted, in
 // the correct position in the sentence, via formatToParts.
@@ -21,40 +21,23 @@ class WrappedValue implements RuntimeValue {
 		yield {type: "opaque", value: this.value};
 	}
 
-	match(ctx: FormattingContext, key: StringLiteral) {
+	match(ctx: FormattingContext, key: ast.Literal) {
 		return false;
 	}
 }
 
 test("Pass an opaque instance as a variable", (tap) => {
 	// "Ready? Then {$submitButton}!"
-	let message: Message = {
-		lang: "en",
-		id: "submit",
-		selectors: [],
-		variants: [
-			{
-				keys: [],
-				value: [
-					{type: "StringLiteral", value: "Ready? Then  "},
-					{
-						type: "VariableReference",
-						name: "submitButton",
-					},
-					{type: "StringLiteral", value: "!"},
-				],
-			},
-		],
-	};
+	let message = new MessageFormat("en-US", "{Ready? Then {$submitButton}!}");
 
 	let instance = new SomeUnstringifiableClass();
 
 	tap.same(
-		formatToParts(message, {
+		message.formatToParts({
 			submitButton: new WrappedValue(instance),
 		}),
 		[
-			{type: "literal", value: "Ready? Then  "},
+			{type: "literal", value: "Ready? Then "},
 			{type: "opaque", value: instance},
 			{type: "literal", value: "!"},
 		]

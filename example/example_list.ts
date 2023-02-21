@@ -1,14 +1,13 @@
 import {test} from "tap";
-import {Argument, Message, Parameter, StringLiteral} from "../impl/model.js";
-import {MatchablePlural, REGISTRY_FORMAT, REGISTRY_MATCH} from "../impl/registry.js";
 import {
-	formatMessage,
 	FormattingContext,
-	formatToParts,
 	Matchable,
+	MessageFormat,
 	RuntimeString,
 	RuntimeValue,
-} from "../impl/runtime.js";
+} from "../impl/index.js";
+import {MatchablePlural, REGISTRY_FORMAT, REGISTRY_MATCH} from "../impl/registry.js";
+import * as ast from "../syntax/ast.js";
 
 class Person {
 	firstName: string;
@@ -40,17 +39,20 @@ class RuntimeList<T extends {toString(): string}> implements RuntimeValue {
 		yield* lf.formatToParts(this.value.map((x) => x.toString()));
 	}
 
-	match(ctx: FormattingContext, key: StringLiteral) {
+	match(ctx: FormattingContext, key: ast.Literal) {
 		return false;
 	}
 }
 
-REGISTRY_MATCH["PLURAL_LEN"] = function (
+REGISTRY_MATCH["pluralOfLength"] = function (
 	ctx: FormattingContext,
-	args: Array<Argument>,
-	opts: Record<string, Parameter>
+	arg: ast.Operand | null,
+	opts: ast.Options
 ): Matchable {
-	let elements = ctx.toRuntimeValue(args[0]);
+	if (arg === null) {
+		throw new TypeError();
+	}
+	let elements = ctx.resolveOperand(arg);
 	if (!(elements instanceof RuntimeList)) {
 		throw new TypeError();
 	}
@@ -61,21 +63,25 @@ REGISTRY_MATCH["PLURAL_LEN"] = function (
 	return new MatchablePlural(category, elements.value.length);
 };
 
-REGISTRY_FORMAT["PEOPLE_LIST"] = function (
+REGISTRY_FORMAT["listOfPeople"] = function (
 	ctx: FormattingContext,
-	args: Array<Argument>,
-	opts: Record<string, Parameter>
+	arg: ast.Operand | null,
+	opts: ast.Options
 ): RuntimeList<string> {
 	if (ctx.locale !== "ro") {
 		throw new Error("Only Romanian supported");
 	}
 
-	let elements = ctx.toRuntimeValue(args[0]);
+	if (arg === null) {
+		throw new TypeError();
+	}
+
+	let elements = ctx.resolveOperand(arg);
 	if (!(elements instanceof RuntimeList)) {
 		throw new TypeError();
 	}
 
-	let name_format = ctx.toRuntimeValue(opts["NAME"]);
+	let name_format = ctx.resolveOperand(opts["name"]);
 	if (!(name_format instanceof RuntimeString)) {
 		throw new TypeError();
 	}
@@ -94,12 +100,12 @@ REGISTRY_FORMAT["PEOPLE_LIST"] = function (
 			break;
 	}
 
-	let list_style = ctx.toRuntimeValue(opts["STYLE"]);
+	let list_style = ctx.resolveOperand(opts["style"]);
 	if (!(list_style instanceof RuntimeString)) {
 		throw new TypeError();
 	}
 
-	let list_type = ctx.toRuntimeValue(opts["TYPE"]);
+	let list_type = ctx.resolveOperand(opts["type"]);
 	if (!(list_type instanceof RuntimeString)) {
 		throw new TypeError();
 	}
@@ -111,7 +117,7 @@ REGISTRY_FORMAT["PEOPLE_LIST"] = function (
 	});
 
 	function decline(name: string): string {
-		let declension = ctx.toRuntimeValue(opts["CASE"]);
+		let declension = ctx.resolveOperand(opts["case"]);
 		if (!(declension instanceof RuntimeString)) {
 			throw new TypeError();
 		}
@@ -136,65 +142,14 @@ REGISTRY_FORMAT["PEOPLE_LIST"] = function (
 };
 
 test("Fancy list formatting, first names only", (tap) => {
-	// gifts [PLURAL_LEN $names : other] =
-	//     [one] "I-am dat cadouri {PEOPLE_LIST $names STYLE long TYPE conjunction CASE dative NAME first}."
-	//     [other] "Le-am dat cadouri {PEOPLE_LIST $names STYLE long TYPE conjunction CASE dative NAME first}."
-	let message: Message = {
-		lang: "ro",
-		id: "gifts",
-		selectors: [
-			{
-				expr: {
-					type: "FunctionCall",
-					name: "PLURAL_LEN",
-					args: [{type: "VariableReference", name: "names"}],
-					opts: {},
-				},
-				default: {type: "StringLiteral", value: "other"},
-			},
-		],
-		variants: [
-			{
-				keys: [{type: "StringLiteral", value: "one"}],
-				value: [
-					{type: "StringLiteral", value: "I-am dat cadouri  "},
-					{
-						type: "FunctionCall",
-						name: "PEOPLE_LIST",
-						args: [{type: "VariableReference", name: "names"}],
-						opts: {
-							STYLE: {type: "StringLiteral", value: "long"},
-							TYPE: {type: "StringLiteral", value: "conjunction"},
-							CASE: {type: "StringLiteral", value: "dative"},
-							NAME: {type: "StringLiteral", value: "first"},
-						},
-					},
-					{type: "StringLiteral", value: "."},
-				],
-			},
-			{
-				keys: [{type: "StringLiteral", value: "other"}],
-				value: [
-					{type: "StringLiteral", value: "Le-am dat cadouri "},
-					{
-						type: "FunctionCall",
-						name: "PEOPLE_LIST",
-						args: [{type: "VariableReference", name: "names"}],
-						opts: {
-							STYLE: {type: "StringLiteral", value: "long"},
-							TYPE: {type: "StringLiteral", value: "conjunction"},
-							CASE: {type: "StringLiteral", value: "dative"},
-							NAME: {type: "StringLiteral", value: "first"},
-						},
-					},
-					{type: "StringLiteral", value: "."},
-				],
-			},
-		],
-	};
-
+	let message = new MessageFormat(
+		"ro",
+		`match {$names :pluralOfLength}
+		 when one {I-am dat cadouri {$names :listOfPeople style=long type=conjunction case=dative name=first}.}
+		 when * {Le-am dat cadouri {$names :listOfPeople style=long type=conjunction case=dative name=first}.} `
+	);
 	tap.equal(
-		formatMessage(message, {
+		message.format({
 			names: new RuntimeList([
 				new Person("Maria", "Stanescu"),
 				new Person("Ileana", "Zamfir"),
@@ -203,9 +158,8 @@ test("Fancy list formatting, first names only", (tap) => {
 		}),
 		"Le-am dat cadouri Mariei, Ilenei și lui Petre."
 	);
-
 	tap.same(
-		formatToParts(message, {
+		message.formatToParts({
 			names: new RuntimeList([
 				new Person("Maria", "Stanescu"),
 				new Person("Ileana", "Zamfir"),
@@ -222,70 +176,19 @@ test("Fancy list formatting, first names only", (tap) => {
 			{type: "literal", value: "."},
 		]
 	);
-
 	tap.end();
 });
 
 test("Fancy list formatting, full names", (tap) => {
-	// gifts [PLURAL_LEN $names : other] =
-	//     [one] "I-am dat cadouri {PEOPLE_LIST $names STYLE long TYPE disjunction CASE dative NAME full}."
-	//     [other] "Le-am dat cadouri {PEOPLE_LIST $names STYLE long TYPE disjunction CASE dative NAME full}."
-	let message: Message = {
-		lang: "ro",
-		id: "gifts",
-		selectors: [
-			{
-				expr: {
-					type: "FunctionCall",
-					name: "PLURAL_LEN",
-					args: [{type: "VariableReference", name: "names"}],
-					opts: {},
-				},
-				default: {type: "StringLiteral", value: "other"},
-			},
-		],
-		variants: [
-			{
-				keys: [{type: "StringLiteral", value: "one"}],
-				value: [
-					{type: "StringLiteral", value: "I-am dat cadouri  "},
-					{
-						type: "FunctionCall",
-						name: "PEOPLE_LIST",
-						args: [{type: "VariableReference", name: "names"}],
-						opts: {
-							STYLE: {type: "StringLiteral", value: "long"},
-							TYPE: {type: "StringLiteral", value: "disjunction"},
-							CASE: {type: "StringLiteral", value: "dative"},
-							NAME: {type: "StringLiteral", value: "full"},
-						},
-					},
-					{type: "StringLiteral", value: "."},
-				],
-			},
-			{
-				keys: [{type: "StringLiteral", value: "other"}],
-				value: [
-					{type: "StringLiteral", value: "Le-am dat cadouri "},
-					{
-						type: "FunctionCall",
-						name: "PEOPLE_LIST",
-						args: [{type: "VariableReference", name: "names"}],
-						opts: {
-							STYLE: {type: "StringLiteral", value: "long"},
-							TYPE: {type: "StringLiteral", value: "disjunction"},
-							CASE: {type: "StringLiteral", value: "dative"},
-							NAME: {type: "StringLiteral", value: "full"},
-						},
-					},
-					{type: "StringLiteral", value: "."},
-				],
-			},
-		],
-	};
+	let message = new MessageFormat(
+		"ro",
+		`match {$names :pluralOfLength}
+		 when one {I-am dat cadouri {$names :listOfPeople style=long type=disjunction case=dative name=full}.}
+		 when * {Le-am dat cadouri {$names :listOfPeople style=long type=disjunction case=dative name=full}.} `
+	);
 
 	tap.equal(
-		formatMessage(message, {
+		message.format({
 			names: new RuntimeList([
 				new Person("Maria", "Stanescu"),
 				new Person("Ileana", "Zamfir"),
@@ -296,7 +199,7 @@ test("Fancy list formatting, full names", (tap) => {
 	);
 
 	tap.same(
-		formatToParts(message, {
+		message.formatToParts({
 			names: new RuntimeList([
 				new Person("Maria", "Stanescu"),
 				new Person("Ileana", "Zamfir"),
