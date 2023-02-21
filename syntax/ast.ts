@@ -35,9 +35,6 @@ export class Variant extends SyntaxNode {
 	}
 }
 
-export type Placeholder = Expression | MarkupOpen | MarkupClose;
-export type PatternElement = Text | Placeholder;
-
 export class Pattern extends SyntaxNode {
 	kind = "Pattern" as const;
 	elements: Array<PatternElement>;
@@ -48,23 +45,25 @@ export class Pattern extends SyntaxNode {
 	}
 }
 
+export type PatternElement = Text | Placeholder;
+
+export type Placeholder = Expression | MarkupOpen | MarkupClose;
+
 export type Expression = OperandExpression | FunctionExpression;
-export type ExpressionOperand = Literal | VariableReference;
 
 export class OperandExpression extends SyntaxNode {
 	kind = "OperandExpression" as const;
-	arg: ExpressionOperand;
+	arg: Operand;
 	func: FunctionExpression | null;
 
-	constructor(arg: ExpressionOperand, func: FunctionExpression | null) {
+	constructor(arg: Operand, func: FunctionExpression | null) {
 		super();
 		this.arg = arg;
 		this.func = func;
 	}
 }
 
-export type OptionValue = Literal | VariableReference;
-export type Options = Record<string, OptionValue>;
+export type Operand = Literal | VariableReference;
 
 export class FunctionExpression extends SyntaxNode {
 	kind = "FunctionExpression" as const;
@@ -77,6 +76,8 @@ export class FunctionExpression extends SyntaxNode {
 		this.opts = opts;
 	}
 }
+
+export type Options = Record<string, Operand>;
 
 export class MarkupOpen extends SyntaxNode {
 	kind = "MarkupOpen" as const;

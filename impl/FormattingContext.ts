@@ -89,7 +89,9 @@ export class FormattingContext {
 		throw new RangeError("No variant matched the selectors.");
 	}
 
-	toRuntimeValue(node: ast.SyntaxNode): RuntimeValue {
+	resolveOperand(node: ast.Literal): RuntimeString;
+	resolveOperand(node: ast.Operand): RuntimeValue;
+	resolveOperand(node: ast.Operand): RuntimeValue {
 		if (node instanceof ast.Literal) {
 			return new RuntimeString(node.value);
 		}

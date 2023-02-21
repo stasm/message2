@@ -5,13 +5,13 @@ import {Formattable, Matchable, RuntimeValue} from "./RuntimeValue.js";
 
 export type FormattingFunc = (
 	ctx: FormattingContext,
-	arg: ast.ExpressionOperand | null,
+	arg: ast.Operand | null,
 	opts: ast.Options
 ) => Formattable;
 
 export type MatchingFunc = (
 	ctx: FormattingContext,
-	arg: ast.ExpressionOperand | null,
+	arg: ast.Operand | null,
 	opts: ast.Options
 ) => Matchable;
 
@@ -23,18 +23,16 @@ export const REGISTRY_MATCH: Record<string, MatchingFunc> = {
 
 function select_choose(
 	ctx: FormattingContext,
-	arg: ast.ExpressionOperand | null,
+	arg: ast.Operand | null,
 	opts: ast.Options
 ): Matchable {
 	if (arg === null) {
 		throw new TypeError();
 	}
-
-	let value = ctx.toRuntimeValue(arg);
+	let value = ctx.resolveOperand(arg);
 	if (value instanceof RuntimeString) {
 		return value;
 	}
-
 	throw new TypeError();
 }
 
@@ -54,24 +52,26 @@ export class MatchablePlural implements Matchable {
 
 function select_plural(
 	ctx: FormattingContext,
-	arg: ast.ExpressionOperand | null,
+	arg: ast.Operand | null,
 	opts: ast.Options
 ): Matchable {
 	if (arg === null) {
 		throw new TypeError();
 	}
-
-	let count = ctx.toRuntimeValue(arg);
-	if (!(count instanceof RuntimeString)) {
+	let raw_value: number;
+	let arg_value = ctx.resolveOperand(arg);
+	if (arg_value instanceof RuntimeString) {
+		raw_value = parseInt(arg_value.value);
+	} else if (arg_value instanceof RuntimeNumber) {
+		raw_value = arg_value.value;
+	} else {
 		throw new TypeError();
 	}
 
-	let value = parseInt(count.value);
-
 	// TODO(stasm): Cache PluralRules.
 	let pr = new Intl.PluralRules(ctx.locale);
-	let category = pr.select(value);
-	return new MatchablePlural(category, value);
+	let category = pr.select(raw_value);
+	return new MatchablePlural(category, raw_value);
 }
 
 // The built-in formatting functions.
@@ -103,19 +103,18 @@ export class RuntimeNumber implements RuntimeValue {
 
 function format_number(
 	ctx: FormattingContext,
-	arg: ast.ExpressionOperand | null,
+	arg: ast.Operand | null,
 	opts: ast.Options
 ): RuntimeNumber {
 	if (arg === null) {
 		throw new TypeError();
 	}
-
-	let argval = ctx.toRuntimeValue(arg);
-	let value: number;
-	if (argval instanceof RuntimeNumber) {
-		value = argval.value;
-	} else if (argval instanceof RuntimeString) {
-		value = parseInt(argval.value);
+	let raw_value: number;
+	let arg_value = ctx.resolveOperand(arg);
+	if (arg_value instanceof RuntimeString) {
+		raw_value = parseInt(arg_value.value);
+	} else if (arg_value instanceof RuntimeNumber) {
+		raw_value = arg_value.value;
 	} else {
 		throw new TypeError();
 	}
@@ -123,17 +122,17 @@ function format_number(
 	// TODO(stasm): Add more options.
 	let opt_values: Record<string, boolean | number | string> = {};
 	if ("style" in opts) {
-		let value = ctx.toRuntimeValue(opts["style"]);
+		let value = ctx.resolveOperand(opts["style"]);
 		if (value instanceof RuntimeString) {
 			opt_values["style"] = value.value;
 		}
 	}
 	if ("unit" in opts) {
-		let value = ctx.toRuntimeValue(opts["unit"]);
+		let value = ctx.resolveOperand(opts["unit"]);
 		if (value instanceof RuntimeString) {
 			opt_values["unit"] = value.value;
 		}
 	}
 
-	return new RuntimeNumber(value, opt_values);
+	return new RuntimeNumber(raw_value, opt_values);
 }
