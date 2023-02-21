@@ -8,13 +8,11 @@ import {Formattable, Matchable, RuntimeValue} from "./RuntimeValue.js";
 export class FormattingContext {
 	locale: string;
 	vars: Record<string, RuntimeValue>;
-	visited: WeakSet<ast.Pattern>;
 	// TODO(stasm): expose cached formatters, etc.
 
 	constructor(locale: string, vars: Record<string, RuntimeValue>) {
 		this.locale = locale;
 		this.vars = vars;
-		this.visited = new WeakSet();
 	}
 
 	formatPattern(pattern: ast.Pattern): string {
@@ -26,12 +24,6 @@ export class FormattingContext {
 	}
 
 	*resolvePattern(pattern: ast.Pattern): IterableIterator<Formattable> {
-		if (this.visited.has(pattern)) {
-			throw new RangeError("Recursive reference to a variant value.");
-		}
-
-		this.visited.add(pattern);
-
 		let result = "";
 		for (let element of pattern.elements) {
 			if (element instanceof ast.Text) {
@@ -52,8 +44,6 @@ export class FormattingContext {
 				// TODO(stasm): markup
 			}
 		}
-
-		this.visited.delete(pattern);
 		return result;
 	}
 
