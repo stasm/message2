@@ -1,9 +1,10 @@
 import {test} from "tap";
-import {listOfPeople, pluralOfLength, RuntimeList} from "../registry/list.js";
+import {match_length, RuntimeList} from "../registry/list.js";
+import {format_people} from "../registry/people.js";
 import {MessageFormat} from "../runtime/index.js";
 
-MessageFormat.registerMatcher("pluralOfLength", pluralOfLength);
-MessageFormat.registerFormatter("listOfPeople", listOfPeople);
+MessageFormat.registerMatcher("length", match_length);
+MessageFormat.registerFormatter("people", format_people);
 
 class Person {
 	firstName: string;
@@ -18,9 +19,9 @@ class Person {
 test("Fancy list formatting, first names only", (tap) => {
 	let message = new MessageFormat(
 		"ro",
-		`match {$names :pluralOfLength}
-		 when one {I-am dat cadouri {$names :listOfPeople style=long type=conjunction case=dative name=first}.}
-		 when * {Le-am dat cadouri {$names :listOfPeople style=long type=conjunction case=dative name=first}.} `
+		`match {$names :length}
+		 when one {I-am dat cadouri {$names :people style=long type=conjunction case=dative name=first}.}
+		 when * {Le-am dat cadouri {$names :people style=long type=conjunction case=dative name=first}.} `
 	);
 	tap.equal(
 		message.format({
@@ -56,9 +57,9 @@ test("Fancy list formatting, first names only", (tap) => {
 test("Fancy list formatting, full names", (tap) => {
 	let message = new MessageFormat(
 		"ro",
-		`match {$names :pluralOfLength}
-		 when one {I-am dat cadouri {$names :listOfPeople style=long type=disjunction case=dative name=full}.}
-		 when * {Le-am dat cadouri {$names :listOfPeople style=long type=disjunction case=dative name=full}.} `
+		`match {$names :length}
+		 when one {I-am dat cadouri {$names :people style=long type=disjunction case=dative name=full}.}
+		 when * {Le-am dat cadouri {$names :people style=long type=disjunction case=dative name=full}.} `
 	);
 
 	tap.equal(

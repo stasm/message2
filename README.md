@@ -29,7 +29,6 @@ Remember to compile TypeScript to JavaScript before you run the examples and CLI
 
     $ npm install
 	$ npx tsc
-	$ npm test
 
 ## Parsing
 

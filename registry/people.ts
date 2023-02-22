@@ -1,52 +1,8 @@
-import {FormattingContext, Matchable, RuntimeString, RuntimeValue} from "../runtime/index.js";
+import {FormattingContext, RuntimeString} from "../runtime/index.js";
 import * as ast from "../syntax/ast.js";
-import {PluralMatcher} from "./number.js";
+import {RuntimeList} from "./list.js";
 
-export class RuntimeList<T extends {toString(): string}> implements RuntimeValue {
-	public value: Array<T>;
-	private opts: Intl.ListFormatOptions;
-
-	constructor(value: Array<T>, opts: Intl.ListFormatOptions = {}) {
-		this.value = value;
-		this.opts = opts;
-	}
-
-	formatToString(ctx: FormattingContext) {
-		// TODO(stasm): Cache ListFormat.
-		let lf = new Intl.ListFormat(ctx.locale, this.opts);
-		return lf.format(this.value.map((x) => x.toString()));
-	}
-
-	*formatToParts(ctx: FormattingContext) {
-		let lf = new Intl.ListFormat(ctx.locale, this.opts);
-		yield* lf.formatToParts(this.value.map((x) => x.toString()));
-	}
-
-	match(ctx: FormattingContext, key: ast.Literal) {
-		return false;
-	}
-}
-
-export function match_length(
-	ctx: FormattingContext,
-	arg: ast.Operand | null,
-	opts: ast.Options
-): Matchable {
-	if (arg === null) {
-		throw new TypeError();
-	}
-	let elements = ctx.resolveOperand(arg);
-	if (!(elements instanceof RuntimeList)) {
-		throw new TypeError();
-	}
-
-	// TODO(stasm): Cache PluralRules.
-	let pr = new Intl.PluralRules(ctx.locale);
-	let category = pr.select(elements.value.length);
-	return new PluralMatcher(category, elements.value.length);
-}
-
-export function listOfPeople(
+export function format_people(
 	ctx: FormattingContext,
 	arg: ast.Operand | null,
 	opts: ast.Options
