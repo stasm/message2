@@ -20,8 +20,8 @@ REGISTRY_FORMAT["noun"] = function get_noun(
 	let noun = get_term(ctx.locale, noun_name.value);
 	let value = noun["singular_nominative"].toString();
 
-	if (opts["lettercase"]) {
-		let lettercase = ctx.resolveOperand(opts["lettercase"]);
+	if (opts.has("lettercase")) {
+		let lettercase = ctx.resolveOperand(opts.get("lettercase"));
 		if (lettercase instanceof RuntimeString) {
 			if (lettercase.value === "capitalized") {
 				// TODO(stasm): Support surrogates and astral codepoints.
@@ -54,7 +54,7 @@ REGISTRY_FORMAT["adjective"] = function get_adjective(
 			return new RuntimeString(adjective["nominative"].toString());
 		}
 		case "pl": {
-			let noun_name = ctx.resolveOperand(opts["accord"]);
+			let noun_name = ctx.resolveOperand(opts.get("accord"));
 			if (!(noun_name instanceof RuntimeString)) {
 				throw new TypeError();
 			}

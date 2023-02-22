@@ -88,8 +88,9 @@ export class FormattingContext {
 	}
 
 	resolveOperand(node: ast.Literal): RuntimeString;
-	resolveOperand(node: ast.Operand): RuntimeValue;
-	resolveOperand(node: ast.Operand): RuntimeValue {
+	resolveOperand(node: ast.VariableReference): RuntimeValue;
+	resolveOperand(node: ast.Operand | undefined): RuntimeValue;
+	resolveOperand(node: ast.Operand | undefined): RuntimeValue {
 		if (node instanceof ast.Literal) {
 			return new RuntimeString(node.value);
 		}

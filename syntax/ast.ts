@@ -69,7 +69,7 @@ export class FunctionExpression extends SyntaxNode {
 	}
 }
 
-export type Options = Record<string, Operand>;
+export type Options = Map<string, Operand>;
 
 export class MarkupOpen extends SyntaxNode {
 	kind = "MarkupOpen" as const;

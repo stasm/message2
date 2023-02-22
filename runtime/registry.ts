@@ -121,14 +121,14 @@ function format_number(
 
 	// TODO(stasm): Add more options.
 	let opt_values: Record<string, boolean | number | string> = {};
-	if ("style" in opts) {
-		let value = ctx.resolveOperand(opts["style"]);
+	if (opts.has("style")) {
+		let value = ctx.resolveOperand(opts.get("style"));
 		if (value instanceof RuntimeString) {
 			opt_values["style"] = value.value;
 		}
 	}
-	if ("unit" in opts) {
-		let value = ctx.resolveOperand(opts["unit"]);
+	if (opts.has("unit")) {
+		let value = ctx.resolveOperand(opts.get("unit"));
 		if (value instanceof RuntimeString) {
 			opt_values["unit"] = value.value;
 		}

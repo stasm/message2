@@ -147,7 +147,7 @@ export class Parser extends ast.Message {
 	}
 
 	#parse_options(): ast.Options {
-		let opts: ast.Options = {};
+		let opts: ast.Options = new Map();
 		while (true) {
 			let current = this.#next_token();
 			if (current instanceof tokens.Punctuator && current.value === "}") {
@@ -156,10 +156,10 @@ export class Parser extends ast.Message {
 			this.#next_token(); // Skip =.
 			let optval = this.#next_token();
 			if (optval instanceof tokens.VariableName) {
-				opts[current.value] = new ast.VariableReference(optval.value);
+				opts.set(current.value, new ast.VariableReference(optval.value));
 			} else {
 				// tokens.Literal or tokens.Nmtoken.
-				opts[current.value] = new ast.Literal(optval.value);
+				opts.set(current.value, new ast.Literal(optval.value));
 			}
 		}
 		return opts;

@@ -22,8 +22,8 @@ REGISTRY_FORMAT["actor"] = function get_actor(
 	switch (ctx.locale) {
 		case "en": {
 			let value: string;
-			if (opts["article"]) {
-				let article = ctx.resolveOperand(opts["article"]);
+			if (opts.has("article")) {
+				let article = ctx.resolveOperand(opts.get("article"));
 				if (!(article instanceof RuntimeString)) {
 					throw new TypeError();
 				}
@@ -38,8 +38,8 @@ REGISTRY_FORMAT["actor"] = function get_actor(
 				value = term["bare"].toString();
 			}
 
-			if (opts["lettercase"]) {
-				let lettercase = ctx.resolveOperand(opts["lettercase"]);
+			if (opts.has("lettercase")) {
+				let lettercase = ctx.resolveOperand(opts.get("lettercase"));
 				if (lettercase instanceof RuntimeString) {
 					if (lettercase.value === "capitalized") {
 						// TODO(stasm): Support surrogates and astral codepoints.
@@ -55,8 +55,8 @@ REGISTRY_FORMAT["actor"] = function get_actor(
 
 		case "pl": {
 			let value;
-			if (opts["case"]) {
-				let declension = ctx.resolveOperand(opts["case"]);
+			if (opts.has("case")) {
+				let declension = ctx.resolveOperand(opts.get("case"));
 				if (!(declension instanceof RuntimeString)) {
 					throw new TypeError();
 				}
@@ -65,8 +65,8 @@ REGISTRY_FORMAT["actor"] = function get_actor(
 				value = term["nominative"].toString();
 			}
 
-			if (opts["lettercase"]) {
-				let lettercase = ctx.resolveOperand(opts["lettercase"]);
+			if (opts.has("lettercase")) {
+				let lettercase = ctx.resolveOperand(opts.get("lettercase"));
 				if (lettercase instanceof RuntimeString) {
 					if (lettercase.value === "capitalized") {
 						// TODO(stasm): Support surrogates and astral codepoints.

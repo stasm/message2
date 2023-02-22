@@ -81,7 +81,7 @@ REGISTRY_FORMAT["listOfPeople"] = function (
 		throw new TypeError();
 	}
 
-	let name_format = ctx.resolveOperand(opts["name"]);
+	let name_format = ctx.resolveOperand(opts.get("name"));
 	if (!(name_format instanceof RuntimeString)) {
 		throw new TypeError();
 	}
@@ -100,12 +100,12 @@ REGISTRY_FORMAT["listOfPeople"] = function (
 			break;
 	}
 
-	let list_style = ctx.resolveOperand(opts["style"]);
+	let list_style = ctx.resolveOperand(opts.get("style"));
 	if (!(list_style instanceof RuntimeString)) {
 		throw new TypeError();
 	}
 
-	let list_type = ctx.resolveOperand(opts["type"]);
+	let list_type = ctx.resolveOperand(opts.get("type"));
 	if (!(list_type instanceof RuntimeString)) {
 		throw new TypeError();
 	}
@@ -117,7 +117,7 @@ REGISTRY_FORMAT["listOfPeople"] = function (
 	});
 
 	function decline(name: string): string {
-		let declension = ctx.resolveOperand(opts["case"]);
+		let declension = ctx.resolveOperand(opts.get("case"));
 		if (!(declension instanceof RuntimeString)) {
 			throw new TypeError();
 		}
