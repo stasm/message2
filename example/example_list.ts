@@ -5,8 +5,8 @@ import {
 	MessageFormat,
 	RuntimeString,
 	RuntimeValue,
-} from "../impl/index.js";
-import {MatchablePlural, REGISTRY_FORMAT, REGISTRY_MATCH} from "../impl/registry.js";
+} from "../runtime/index.js";
+import {MatchablePlural, REGISTRY_FORMAT, REGISTRY_MATCH} from "../runtime/registry.js";
 import * as ast from "../syntax/ast.js";
 
 class Person {

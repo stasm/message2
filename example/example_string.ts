@@ -1,5 +1,5 @@
 import {test} from "tap";
-import {MessageFormat, RuntimeString} from "../impl/index.js";
+import {MessageFormat, RuntimeString} from "../runtime/index.js";
 
 test("String interpolation", (tap) => {
 	let message = new MessageFormat("en-US", "{Hello, {$userName}!}");

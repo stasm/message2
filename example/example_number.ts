@@ -1,6 +1,6 @@
 import {test} from "tap";
-import {MessageFormat} from "../impl/index.js";
-import {RuntimeNumber} from "../impl/registry.js";
+import {MessageFormat} from "../runtime/index.js";
+import {RuntimeNumber} from "../runtime/registry.js";
 
 test("Number formatting (English)", (tap) => {
 	let message = new MessageFormat(

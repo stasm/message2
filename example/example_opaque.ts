@@ -1,5 +1,5 @@
 import {test} from "tap";
-import {FormattingContext, MessageFormat, OpaquePart, RuntimeValue} from "../impl/index.js";
+import {FormattingContext, MessageFormat, OpaquePart, RuntimeValue} from "../runtime/index.js";
 import * as ast from "../syntax/ast.js";
 
 // We want to pass it into the translation and get it back out unformatted, in

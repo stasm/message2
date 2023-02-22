@@ -1,6 +1,6 @@
 import {test} from "tap";
-import {MessageFormat, RuntimeString} from "../impl/index.js";
-import {RuntimeNumber} from "../impl/registry.js";
+import {MessageFormat, RuntimeString} from "../runtime/index.js";
+import {RuntimeNumber} from "../runtime/registry.js";
 
 test("Plural selection (English)", (tap) => {
 	let message = new MessageFormat(

@@ -1,6 +1,6 @@
 import {test} from "tap";
-import {Formattable, FormattingContext, MessageFormat, RuntimeString} from "../impl/index.js";
-import {REGISTRY_FORMAT} from "../impl/registry.js";
+import {Formattable, FormattingContext, MessageFormat, RuntimeString} from "../runtime/index.js";
+import {REGISTRY_FORMAT} from "../runtime/registry.js";
 import * as ast from "../syntax/ast.js";
 import {get_term} from "./glossary.js";
 
