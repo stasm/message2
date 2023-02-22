@@ -1,6 +1,7 @@
 import * as ast from "../syntax/ast.js";
 import {Parser} from "../syntax/Parser.js";
 import {FormattingContext} from "./FormattingContext.js";
+import {FormattingFunc, MatchingFunc, Registry} from "./registry.js";
 import {RuntimePart, RuntimeValue} from "./RuntimeValue.js";
 
 export class MessageFormat {
@@ -26,5 +27,13 @@ export class MessageFormat {
 		for (let value of ctx.resolvePattern(variant.pattern)) {
 			yield* value.formatToParts(ctx);
 		}
+	}
+
+	static registerFormatter(name: string, func: FormattingFunc) {
+		Registry.formatters.set(name, func);
+	}
+
+	static registerMatcher(name: string, func: MatchingFunc) {
+		Registry.matchers.set(name, func);
 	}
 }

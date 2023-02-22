@@ -1,11 +1,15 @@
 import {test} from "tap";
+import {match_equals} from "../registry/equals.js";
+import {match_plural, RuntimeNumber} from "../registry/number.js";
 import {MessageFormat, RuntimeString} from "../runtime/index.js";
-import {RuntimeNumber} from "../runtime/registry.js";
+
+MessageFormat.registerMatcher("equals", match_equals);
+MessageFormat.registerMatcher("plural", match_plural);
 
 test("Plural selection (English)", (tap) => {
 	let message = new MessageFormat(
 		"en-US",
-		`match {$photoCount :plural} {$userGender :choose}
+		`match {$photoCount :plural} {$userGender :equals}
 		 when one masculine {{$userName} added a new photo to his album.}
 		 when one feminine {{$userName} added a new photo to her album.}
 		 when one * {{$userName} added a new photo to their album.}

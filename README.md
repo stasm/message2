@@ -21,6 +21,7 @@ The codebase is organized in the following directories:
 
 * `syntax` — the parser and the definition of the AST data model.
 * `runtime` — the `MessageFormat` class which parses and formats messages.
+* `registry` — implementations of formatting and matching functions.
 * `command` — CLI tools which can be used for testing and inspecting the behavior of the implementation.
 * `example` — examples of messages and custom functions; they also double as tests.
 
@@ -73,13 +74,19 @@ assert.deepEqual(iter.next().value, {type: "literal", value: "!"});
 assert.equal(iter.next().done, true);
 ```
 
-I'm still working on the implemntation of `MessageFormat`. Currently, the following parts are missing or require more discussion:
+I'm still working on the implementation of `MessageFormat`. Currently, the following parts are missing or require more discussion:
 
 - [ ] Support local declarations.
 - [ ] Handle errors according to the [spec draft](https://github.com/unicode-org/message-format-wg/blob/main/spec/formatting.md#error-handling).
 - [ ] (Maybe) allow passing native JavaScript types, such as `string`, `number`, and `Date` as message arguments. 
 - [ ] Decide on the shape and types of parts yielded by `formatToParts`.
 - [ ] Establish a model for error handling of registry functions.
+
+## Registry
+
+The registry contains implementations of formatting and matching functions. All functions available in `message2` are registered functions, even `:number` and `:plural`. The goal is to ensure that registered functions can be as powerful and expressive as necessary. Some modules in the registry also provide custom runtime types. For instance, [`registry/number.ts`](registry/number.ts) provides `RuntimeNumber` which formats numbers and matches them by value, and `PluralMatcher` which matches numbers by value and by LDML plural category.
+
+The only type built into the runtime rather than the registry is the [`RuntimeString`](runtime/RuntimeString.js), which is the runtime representation of `ast.Literal`.
 
 ## Commands
 

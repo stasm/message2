@@ -1,5 +1,5 @@
 import * as ast from "../syntax/ast.js";
-import {REGISTRY_FORMAT, REGISTRY_MATCH} from "./registry.js";
+import {Registry} from "./registry.js";
 import {RuntimeString} from "./RuntimeString.js";
 import {Formattable, Matchable, RuntimeValue} from "./RuntimeValue.js";
 
@@ -28,12 +28,20 @@ export class FormattingContext {
 			if (element instanceof ast.Text) {
 				yield new RuntimeString(element.value);
 			} else if (element instanceof ast.FunctionExpression) {
-				let callable = REGISTRY_FORMAT[element.name];
-				yield callable(this, null, element.opts);
+				let func = Registry.formatters.get(element.name);
+				if (func) {
+					yield func(this, null, element.opts);
+				} else {
+					throw new Error("todo");
+				}
 			} else if (element instanceof ast.OperandExpression) {
 				if (element.func) {
-					let func = REGISTRY_FORMAT[element.func.name];
-					yield func(this, element.arg, element.func.opts);
+					let func = Registry.formatters.get(element.func.name);
+					if (func) {
+						yield func(this, element.arg, element.func.opts);
+					} else {
+						throw new Error("todo");
+					}
 				} else if (element.arg instanceof ast.VariableReference) {
 					yield this.vars[element.arg.name];
 				} else {
@@ -49,13 +57,21 @@ export class FormattingContext {
 		let resolved_selectors: Array<Matchable> = [];
 		for (let expression of selectors) {
 			if (expression instanceof ast.FunctionExpression) {
-				let func = REGISTRY_MATCH[expression.name];
-				let value = func(this, null, expression.opts);
-				resolved_selectors.push(value);
+				let func = Registry.matchers.get(expression.name);
+				if (func) {
+					let value = func(this, null, expression.opts);
+					resolved_selectors.push(value);
+				} else {
+					throw new Error("todo");
+				}
 			} else if (expression.func) {
-				let func = REGISTRY_MATCH[expression.func.name];
-				let value = func(this, expression.arg, expression.func.opts);
-				resolved_selectors.push(value);
+				let func = Registry.matchers.get(expression.func.name);
+				if (func) {
+					let value = func(this, expression.arg, expression.func.opts);
+					resolved_selectors.push(value);
+				} else {
+					throw new Error("todo");
+				}
 			} else if (expression.arg instanceof ast.VariableReference) {
 				let value = this.vars[expression.arg.name];
 				resolved_selectors.push(value);

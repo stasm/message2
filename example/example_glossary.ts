@@ -1,72 +1,10 @@
 import {test} from "tap";
-import {Formattable, FormattingContext, MessageFormat, RuntimeString} from "../runtime/index.js";
-import {REGISTRY_FORMAT} from "../runtime/registry.js";
-import * as ast from "../syntax/ast.js";
-import {get_term} from "./glossary.js";
+import {format_adjective} from "../registry/adjective.js";
+import {format_noun} from "../registry/noun.js";
+import {MessageFormat, RuntimeString} from "../runtime/index.js";
 
-REGISTRY_FORMAT["noun"] = function get_noun(
-	ctx: FormattingContext,
-	arg: ast.Operand | null,
-	opts: ast.Options
-): Formattable {
-	if (arg === null) {
-		throw new TypeError();
-	}
-	let noun_name = ctx.resolveOperand(arg);
-	if (!(noun_name instanceof RuntimeString)) {
-		throw new TypeError();
-	}
-
-	let noun = get_term(ctx.locale, noun_name.value);
-	let value = noun["singular_nominative"].toString();
-
-	if (opts.has("lettercase")) {
-		let lettercase = ctx.resolveOperand(opts.get("lettercase"));
-		if (lettercase instanceof RuntimeString) {
-			if (lettercase.value === "capitalized") {
-				// TODO(stasm): Support surrogates and astral codepoints.
-				return new RuntimeString(value[0].toUpperCase() + value.slice(1));
-			}
-		} else {
-			throw new TypeError();
-		}
-	}
-
-	return new RuntimeString(value);
-};
-
-REGISTRY_FORMAT["adjective"] = function get_adjective(
-	ctx: FormattingContext,
-	arg: ast.Operand | null,
-	opts: ast.Options
-): Formattable {
-	if (arg === null) {
-		throw new TypeError();
-	}
-	let adj_name = ctx.resolveOperand(arg);
-	if (!(adj_name instanceof RuntimeString)) {
-		throw new TypeError();
-	}
-
-	switch (ctx.locale) {
-		case "en": {
-			let adjective = get_term(ctx.locale, adj_name.value);
-			return new RuntimeString(adjective["nominative"].toString());
-		}
-		case "pl": {
-			let noun_name = ctx.resolveOperand(opts.get("accord"));
-			if (!(noun_name instanceof RuntimeString)) {
-				throw new TypeError();
-			}
-
-			let noun = get_term(ctx.locale, noun_name.value);
-			let adjective = get_term(ctx.locale, adj_name.value);
-			return new RuntimeString(adjective["singular_" + noun["gender"]].toString());
-		}
-		default:
-			return new RuntimeString(adj_name.toString());
-	}
-};
+MessageFormat.registerFormatter("noun", format_noun);
+MessageFormat.registerFormatter("adjective", format_adjective);
 
 test("NOUN is ADJECTIVE (English)", (tap) => {
 	let message = new MessageFormat("en", "{The {$item :noun} is {$color :adjective}.}");
