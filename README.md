@@ -86,7 +86,6 @@ assert.equal(iter.next().done, true);
 
 I'm still working on the implementation of `MessageFormat`. Currently, the following parts are missing or require more discussion:
 
-- [ ] Support local declarations.
 - [ ] Handle errors according to the [spec draft](https://github.com/unicode-org/message-format-wg/blob/main/spec/formatting.md#error-handling).
 - [ ] (Maybe) allow passing native JavaScript types, such as `string`, `number`, and `Date` as message arguments. 
 - [ ] Decide on the shape and types of parts yielded by `formatToParts`.
