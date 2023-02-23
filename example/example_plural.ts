@@ -6,7 +6,86 @@ import {MessageFormat, RuntimeString} from "../runtime/index.js";
 MessageFormat.registerMatcher("equals", match_equals);
 MessageFormat.registerMatcher("plural", match_plural);
 
-test("Plural selection (English)", (tap) => {
+test("Plural selection (English: one wins)", (tap) => {
+	let message = new MessageFormat(
+		"en-US",
+		`
+		match {$count :plural}
+		when one {You have {$count} new message.}
+		when * {You have {$count} new messages.}`
+	);
+	tap.equal(
+		message.format({
+			count: new RuntimeNumber(1),
+		}),
+		"You have 1 new message."
+	);
+	tap.same(
+		message.formatToParts({
+			count: new RuntimeNumber(1),
+		}),
+		[
+			{type: "literal", value: "You have "},
+			{type: "integer", value: "1"},
+			{type: "literal", value: " new message."},
+		]
+	);
+	tap.end();
+});
+
+test("Plural selection (English: 1 wins)", (tap) => {
+	let message = new MessageFormat(
+		"en-US",
+		`
+		match {$count :plural}
+		when 1 {You have a new message.}
+		when one {You have {$count} new message.}
+		when * {You have {$count} new messages.}`
+	);
+	tap.equal(
+		message.format({
+			count: new RuntimeNumber(1),
+		}),
+		"You have a new message."
+	);
+	tap.same(
+		message.formatToParts({
+			count: new RuntimeNumber(1),
+		}),
+		[{type: "literal", value: "You have a new message."}]
+	);
+	tap.end();
+});
+
+test("Plural selection (English: * wins)", (tap) => {
+	let message = new MessageFormat(
+		"en-US",
+		`
+		match {$count :plural}
+		when * {You have {$count} new messages.}
+		when 1 {You have a new message.}
+		when one {You have {$count} new message.}`
+	);
+	tap.equal(
+		message.format({
+			count: new RuntimeNumber(1),
+		}),
+		"You have 1 new messages."
+	);
+	tap.same(
+		message.formatToParts({
+			count: new RuntimeNumber(1),
+		}),
+		[
+			{type: "literal", value: "You have "},
+			{type: "integer", value: "1"},
+			{type: "literal", value: " new messages."},
+		]
+	);
+	tap.end();
+});
+
+test("Multiple selection (English)", (tap) => {
 	let message = new MessageFormat(
 		"en-US",
 		`match {$photoCount :plural} {$userGender :equals}

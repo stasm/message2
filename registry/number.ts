@@ -105,7 +105,8 @@ export class PluralMatcher implements Matchable {
 	}
 
 	match(ctx: FormattingContext, key: ast.Literal): boolean {
-		return this.rule === key.value;
+		// Attempt an exact match on the numerical value first.
+		return this.number === parseInt(key.value) || this.rule === key.value;
 	}
 }
 
