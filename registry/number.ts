@@ -31,11 +31,7 @@ export class RuntimeNumber implements RuntimeValue {
 	}
 }
 
-export function format_number(
-	ctx: FormattingContext,
-	arg: ast.Operand | null,
-	opts: ast.Options
-): RuntimeNumber {
+export function format_number(ctx: FormattingContext, arg: ast.Operand | null, opts: ast.Options): RuntimeNumber {
 	if (arg === null) {
 		throw new TypeError();
 	}
@@ -110,11 +106,7 @@ export class PluralMatcher implements Matchable {
 	}
 }
 
-export function match_plural(
-	ctx: FormattingContext,
-	arg: ast.Operand | null,
-	opts: ast.Options
-): Matchable {
+export function match_plural(ctx: FormattingContext, arg: ast.Operand | null, opts: ast.Options): Matchable {
 	// TODO(stasm): Cache PluralRules.
 	// TODO(stasm): Support other options.
 

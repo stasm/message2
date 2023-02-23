@@ -45,9 +45,7 @@ export class FormattingContext {
 					if (func) {
 						yield func(this, element.arg, element.func.opts);
 					} else {
-						throw new ReferenceError(
-							"Unknown formatting function: " + element.func.name
-						);
+						throw new ReferenceError("Unknown formatting function: " + element.func.name);
 					}
 				} else {
 					yield this.resolveOperand(element.arg);
@@ -75,9 +73,7 @@ export class FormattingContext {
 					let value = func(this, expression.arg, expression.func.opts);
 					resolved_selectors.push(value);
 				} else {
-					throw new ReferenceError(
-						"Unknown formatting function: " + expression.func.name
-					);
+					throw new ReferenceError("Unknown formatting function: " + expression.func.name);
 				}
 			} else {
 				throw new Error("OperandExpressions without function calls cannot be selectors.");

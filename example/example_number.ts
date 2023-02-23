@@ -5,10 +5,7 @@ import {MessageFormat} from "../runtime/index.js";
 MessageFormat.registerFormatter("number", format_number);
 
 test("Number formatting (English)", (tap) => {
-	let message = new MessageFormat(
-		"en-US",
-		"{Transferred {$payloadSize :number style=unit unit=megabyte}.}"
-	);
+	let message = new MessageFormat("en-US", "{Transferred {$payloadSize :number style=unit unit=megabyte}.}");
 	tap.equal(
 		message.format({
 			payloadSize: new RuntimeNumber(1.23),
@@ -33,10 +30,7 @@ test("Number formatting (English)", (tap) => {
 });
 
 test("Number formatting (French)", (tap) => {
-	let message = new MessageFormat(
-		"fr",
-		"{{$payloadSize :number style=unit unit=megabyte} transféré.}"
-	);
+	let message = new MessageFormat("fr", "{{$payloadSize :number style=unit unit=megabyte} transféré.}");
 	tap.equal(
 		message.format({
 			payloadSize: new RuntimeNumber(1.23),

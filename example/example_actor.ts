@@ -47,10 +47,7 @@ test("Subject verb OBJECT (Polish; requires the accusative case)", (tap) => {
 });
 
 test("SUBJECT verb (English)", (tap) => {
-	let message = new MessageFormat(
-		"en",
-		"{{$monster :actor article=definite lettercase=capitalized} waves at you!}"
-	);
+	let message = new MessageFormat("en", "{{$monster :actor article=definite lettercase=capitalized} waves at you!}");
 	tap.equal(
 		message.format({
 			monster: new RuntimeString("ogre"),

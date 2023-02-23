@@ -34,11 +34,7 @@ export class RuntimeList implements RuntimeValue {
 	}
 }
 
-export function match_length(
-	ctx: FormattingContext,
-	arg: ast.Operand | null,
-	opts: ast.Options
-): Matchable {
+export function match_length(ctx: FormattingContext, arg: ast.Operand | null, opts: ast.Options): Matchable {
 	if (arg === null) {
 		throw new TypeError();
 	}
@@ -52,11 +48,7 @@ export function match_length(
 	throw new TypeError();
 }
 
-export function format_list(
-	ctx: FormattingContext,
-	arg: ast.Operand | null,
-	opts: ast.Options
-): RuntimeList {
+export function format_list(ctx: FormattingContext, arg: ast.Operand | null, opts: ast.Options): RuntimeList {
 	if (arg === null) {
 		throw new TypeError();
 	}
@@ -73,11 +65,7 @@ export function format_list(
 	if (opts.has("type")) {
 		let value = ctx.resolveOperand(opts.get("type"));
 		if (value instanceof RuntimeString) {
-			if (
-				value.value === "conjunction" ||
-				value.value === "disjunction" ||
-				value.value === "unit"
-			) {
+			if (value.value === "conjunction" || value.value === "disjunction" || value.value === "unit") {
 				resolved_opts.type = value.value;
 			}
 		}

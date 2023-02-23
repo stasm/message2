@@ -166,11 +166,7 @@ export class Lexer {
 				break;
 			} else if (current.kind !== "escape") {
 				text_acc += current.value;
-			} else if (
-				current.value === "\\}" ||
-				current.value === "\\{" ||
-				current.value === "\\\\"
-			) {
+			} else if (current.value === "\\}" || current.value === "\\{" || current.value === "\\\\") {
 				text_acc += current.value[1];
 			} else {
 				throw this.#error("Unexpected escape sequence", current);
@@ -290,11 +286,7 @@ export class Lexer {
 		while (current.value !== ")") {
 			if (current.kind !== "escape") {
 				literal_acc += current.value;
-			} else if (
-				current.value === "\\)" ||
-				current.value === "\\(" ||
-				current.value === "\\\\"
-			) {
+			} else if (current.value === "\\)" || current.value === "\\(" || current.value === "\\\\") {
 				literal_acc += current.value[1];
 			} else {
 				throw this.#error("Unexpected escape sequence", current);

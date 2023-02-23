@@ -2,11 +2,7 @@ import {get_term} from "../example/glossary.js";
 import {Formattable, FormattingContext, RuntimeString} from "../runtime/index.js";
 import * as ast from "../syntax/ast.js";
 
-export function format_adjective(
-	ctx: FormattingContext,
-	arg: ast.Operand | null,
-	opts: ast.Options
-): Formattable {
+export function format_adjective(ctx: FormattingContext, arg: ast.Operand | null, opts: ast.Options): Formattable {
 	if (arg === null) {
 		throw new TypeError();
 	}

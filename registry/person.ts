@@ -77,11 +77,7 @@ export class Person implements RuntimeValue {
 	}
 }
 
-export function format_person(
-	ctx: FormattingContext,
-	arg: ast.Operand | null,
-	opts: ast.Options
-): Person {
+export function format_person(ctx: FormattingContext, arg: ast.Operand | null, opts: ast.Options): Person {
 	if (arg === null) {
 		throw new TypeError();
 	}
@@ -93,11 +89,7 @@ export function format_person(
 	throw new TypeError();
 }
 
-export function map_person(
-	ctx: FormattingContext,
-	arg: ast.Operand | null,
-	opts: ast.Options
-): RuntimeList {
+export function map_person(ctx: FormattingContext, arg: ast.Operand | null, opts: ast.Options): RuntimeList {
 	if (arg === null) {
 		throw new TypeError();
 	}
