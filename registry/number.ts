@@ -10,6 +10,13 @@ export class RuntimeNumber implements RuntimeValue {
 		this.opts = opts;
 	}
 
+	static from(other: RuntimeNumber, extend_opts?: Intl.NumberFormatOptions) {
+		return new this(other.value, {
+			...other.opts,
+			...extend_opts,
+		});
+	}
+
 	formatToString(ctx: FormattingContext) {
 		// TODO(stasm): Cache NumberFormat.
 		return new Intl.NumberFormat(ctx.locale, this.opts).format(this.value);
@@ -79,10 +86,7 @@ export function format_number(
 
 	let arg_value = ctx.resolveOperand(arg);
 	if (arg_value instanceof RuntimeNumber) {
-		return new RuntimeNumber(arg_value.value, {
-			...arg_value.opts,
-			...resolved_opts,
-		});
+		return RuntimeNumber.from(arg_value, resolved_opts);
 	}
 	if (arg_value instanceof RuntimeString) {
 		let raw_value = parseInt(arg_value.value);

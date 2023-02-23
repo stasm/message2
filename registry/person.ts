@@ -18,6 +18,13 @@ export class Person implements RuntimeValue {
 		this.opts = opts;
 	}
 
+	static from(other: Person, extend_opts?: PersonFormatOptions) {
+		return new this(other.firstName, other.lastName, {
+			...other.opts,
+			...extend_opts,
+		});
+	}
+
 	formatToString(ctx: FormattingContext) {
 		switch (this.opts.name) {
 			case "first":
@@ -115,24 +122,21 @@ export function apply_person(ctx: FormattingContext, value: Person, opts: ast.Op
 
 	let resolved_opts: PersonFormatOptions = {};
 	if (opts.has("name")) {
-		let value = ctx.resolveOperand(opts.get("name"));
-		if (value instanceof RuntimeString) {
-			if (value.value === "first" || value.value === "last" || value.value === "full") {
-				resolved_opts.name = value.value;
+		let optval = ctx.resolveOperand(opts.get("name"));
+		if (optval instanceof RuntimeString) {
+			if (optval.value === "first" || optval.value === "last" || optval.value === "full") {
+				resolved_opts.name = optval.value;
 			}
 		}
 	}
 	if (opts.has("declension")) {
-		let value = ctx.resolveOperand(opts.get("declension"));
-		if (value instanceof RuntimeString) {
-			if (value.value === "nominative" || value.value === "dative") {
-				resolved_opts.declension = value.value;
+		let optval = ctx.resolveOperand(opts.get("declension"));
+		if (optval instanceof RuntimeString) {
+			if (optval.value === "nominative" || optval.value === "dative") {
+				resolved_opts.declension = optval.value;
 			}
 		}
 	}
 
-	return new Person(value.firstName, value.lastName, {
-		...value.opts,
-		...resolved_opts,
-	});
+	return Person.from(value, resolved_opts);
 }

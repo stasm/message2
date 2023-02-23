@@ -11,6 +11,13 @@ export class RuntimeList implements RuntimeValue {
 		this.opts = opts;
 	}
 
+	static from(other: RuntimeList, extend_opts?: Intl.ListFormatOptions) {
+		return new this(other.value, {
+			...other.opts,
+			...extend_opts,
+		});
+	}
+
 	formatToString(ctx: FormattingContext) {
 		// TODO(stasm): Cache ListFormat.
 		let lf = new Intl.ListFormat(ctx.locale, this.opts);
@@ -36,14 +43,13 @@ export function match_length(
 		throw new TypeError();
 	}
 	let elements = ctx.resolveOperand(arg);
-	if (!(elements instanceof RuntimeList)) {
-		throw new TypeError();
+	if (elements instanceof RuntimeList) {
+		// TODO(stasm): Cache PluralRules.
+		let pr = new Intl.PluralRules(ctx.locale);
+		let category = pr.select(elements.value.length);
+		return new PluralMatcher(category, elements.value.length);
 	}
-
-	// TODO(stasm): Cache PluralRules.
-	let pr = new Intl.PluralRules(ctx.locale);
-	let category = pr.select(elements.value.length);
-	return new PluralMatcher(category, elements.value.length);
+	throw new TypeError();
 }
 
 export function format_list(
@@ -79,10 +85,7 @@ export function format_list(
 
 	let arg_value = ctx.resolveOperand(arg);
 	if (arg_value instanceof RuntimeList) {
-		return new RuntimeList(arg_value.value, {
-			...arg_value.opts,
-			...resolved_opts,
-		});
+		return RuntimeList.from(arg_value, resolved_opts);
 	}
 	if (arg_value instanceof RuntimeString) {
 		return new RuntimeList([arg_value], resolved_opts);

@@ -9,6 +9,10 @@ export class RuntimeString implements RuntimeValue {
 		this.value = value;
 	}
 
+	static from(other: RuntimeString) {
+		return new this(other.value);
+	}
+
 	formatToString(ctx: FormattingContext) {
 		return this.value;
 	}

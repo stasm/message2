@@ -31,6 +31,6 @@ export function format_adjective(
 			return new RuntimeString(adjective["singular_" + noun["gender"]].toString());
 		}
 		default:
-			return new RuntimeString(adj_name.toString());
+			return adj_name;
 	}
 }

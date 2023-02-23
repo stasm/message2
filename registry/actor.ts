@@ -55,10 +55,11 @@ export function format_actor(
 			let value;
 			if (opts.has("case")) {
 				let declension = ctx.resolveOperand(opts.get("case"));
-				if (!(declension instanceof RuntimeString)) {
+				if (declension instanceof RuntimeString) {
+					value = term[declension.value].toString();
+				} else {
 					throw new TypeError();
 				}
-				value = term[declension.value].toString();
 			} else {
 				value = term["nominative"].toString();
 			}
@@ -78,6 +79,6 @@ export function format_actor(
 			return new RuntimeString(value);
 		}
 		default:
-			return new RuntimeString(name.value);
+			return name;
 	}
 }
