@@ -8,11 +8,16 @@ import {Formattable, Matchable, RuntimeValue} from "./RuntimeValue.js";
 export class FormattingContext {
 	locale: string;
 	vars: Record<string, RuntimeValue>;
+	lets: Map<string, Formattable> = new Map();
 	// TODO(stasm): expose cached formatters, etc.
 
-	constructor(locale: string, vars: Record<string, RuntimeValue>) {
+	constructor(locale: string, vars: Record<string, RuntimeValue>, locals: Array<ast.Local>) {
 		this.locale = locale;
 		this.vars = vars;
+
+		for (let local of locals) {
+			this.lets.set(local.name, this.resolveExpression(local.expr));
+		}
 	}
 
 	formatPattern(pattern: ast.Pattern): string {
@@ -42,10 +47,8 @@ export class FormattingContext {
 					} else {
 						throw new Error("todo");
 					}
-				} else if (element.arg instanceof ast.VariableReference) {
-					yield this.vars[element.arg.name];
 				} else {
-					yield new RuntimeString(element.arg.value);
+					yield this.resolveOperand(element.arg);
 				}
 			} else {
 				// TODO(stasm): markup
@@ -72,12 +75,8 @@ export class FormattingContext {
 				} else {
 					throw new Error("todo");
 				}
-			} else if (expression.arg instanceof ast.VariableReference) {
-				let value = this.vars[expression.arg.name];
-				resolved_selectors.push(value);
 			} else {
-				let value = new RuntimeString(expression.arg.value);
-				resolved_selectors.push(value);
+				throw new Error("OperandExpressions without function calls cannot be selectors.");
 			}
 		}
 
@@ -104,15 +103,38 @@ export class FormattingContext {
 	}
 
 	resolveOperand(node: ast.Literal): RuntimeString;
-	resolveOperand(node: ast.VariableReference): RuntimeValue;
-	resolveOperand(node: ast.Operand | undefined): RuntimeValue;
-	resolveOperand(node: ast.Operand | undefined): RuntimeValue {
+	resolveOperand(node: ast.VariableReference): Formattable;
+	resolveOperand(node: ast.Operand | undefined): Formattable;
+	resolveOperand(node: ast.Operand | undefined): Formattable {
 		if (node instanceof ast.Literal) {
 			return new RuntimeString(node.value);
 		}
 		if (node instanceof ast.VariableReference) {
+			let local = this.lets.get(node.name);
+			if (local) {
+				return local;
+			}
 			return this.vars[node.name];
 		}
 		throw new TypeError("Invalid node type.");
+	}
+
+	resolveExpression(expr: ast.Expression): Formattable {
+		if (expr instanceof ast.FunctionExpression) {
+			let func = Registry.formatters.get(expr.name);
+			if (func) {
+				return func(this, null, expr.opts);
+			}
+			throw new Error("todo");
+		}
+		if (expr.func) {
+			let func = Registry.formatters.get(expr.func.name);
+			if (func) {
+				return func(this, expr.arg, expr.func.opts);
+			}
+			throw new Error("todo");
+		} else {
+			return this.resolveOperand(expr.arg);
+		}
 	}
 }

@@ -3,7 +3,7 @@ import * as ast from "../syntax/ast.js";
 
 export class RuntimeNumber implements RuntimeValue {
 	public value: number;
-	private opts: Intl.NumberFormatOptions;
+	public opts: Intl.NumberFormatOptions;
 
 	constructor(value: number, opts: Intl.NumberFormatOptions = {}) {
 		this.value = value;
@@ -32,45 +32,76 @@ export function format_number(
 	if (arg === null) {
 		throw new TypeError();
 	}
-	let raw_value: number;
-	let arg_value = ctx.resolveOperand(arg);
-	if (arg_value instanceof RuntimeString) {
-		raw_value = parseInt(arg_value.value);
-	} else if (arg_value instanceof RuntimeNumber) {
-		raw_value = arg_value.value;
-	} else {
-		throw new TypeError();
-	}
 
-	// TODO(stasm): Add more options.
-	let opt_values: Record<string, boolean | number | string> = {};
+	let resolved_opts: Intl.NumberFormatOptions = {};
 	if (opts.has("style")) {
 		let value = ctx.resolveOperand(opts.get("style"));
 		if (value instanceof RuntimeString) {
-			opt_values["style"] = value.value;
+			resolved_opts.style = value.value;
 		}
 	}
 	if (opts.has("unit")) {
 		let value = ctx.resolveOperand(opts.get("unit"));
 		if (value instanceof RuntimeString) {
-			opt_values["unit"] = value.value;
+			resolved_opts.unit = value.value;
+		}
+	}
+	if (opts.has("minimumIntegerDigits")) {
+		let value = ctx.resolveOperand(opts.get("minimumIntegerDigits"));
+		if (value instanceof RuntimeString) {
+			resolved_opts.minimumIntegerDigits = parseInt(value.value);
+		}
+	}
+	if (opts.has("minimumFractionDigits")) {
+		let value = ctx.resolveOperand(opts.get("minimumFractionDigits"));
+		if (value instanceof RuntimeString) {
+			resolved_opts.minimumFractionDigits = parseInt(value.value);
+		}
+	}
+	if (opts.has("maximumFractionDigits")) {
+		let value = ctx.resolveOperand(opts.get("maximumFractionDigits"));
+		if (value instanceof RuntimeString) {
+			resolved_opts.maximumFractionDigits = parseInt(value.value);
+		}
+	}
+	if (opts.has("minimumSignificantDigits")) {
+		let value = ctx.resolveOperand(opts.get("minimumSignificantDigits"));
+		if (value instanceof RuntimeString) {
+			resolved_opts.minimumSignificantDigits = parseInt(value.value);
+		}
+	}
+	if (opts.has("maximumSignificantDigits")) {
+		let value = ctx.resolveOperand(opts.get("maximumSignificantDigits"));
+		if (value instanceof RuntimeString) {
+			resolved_opts.maximumSignificantDigits = parseInt(value.value);
 		}
 	}
 
-	return new RuntimeNumber(raw_value, opt_values);
+	let arg_value = ctx.resolveOperand(arg);
+	if (arg_value instanceof RuntimeNumber) {
+		return new RuntimeNumber(arg_value.value, {
+			...arg_value.opts,
+			...resolved_opts,
+		});
+	}
+	if (arg_value instanceof RuntimeString) {
+		let raw_value = parseInt(arg_value.value);
+		return new RuntimeNumber(raw_value, resolved_opts);
+	}
+	throw new TypeError();
 }
 
 export class PluralMatcher implements Matchable {
-	public value: Intl.LDMLPluralRule;
-	public count: number;
+	public rule: Intl.LDMLPluralRule;
+	public number: number;
 
-	constructor(value: Intl.LDMLPluralRule, count: number) {
-		this.value = value;
-		this.count = count;
+	constructor(rule: Intl.LDMLPluralRule, number: number) {
+		this.rule = rule;
+		this.number = number;
 	}
 
 	match(ctx: FormattingContext, key: ast.Literal): boolean {
-		return this.value === key.value;
+		return this.rule === key.value;
 	}
 }
 
@@ -79,21 +110,41 @@ export function match_plural(
 	arg: ast.Operand | null,
 	opts: ast.Options
 ): Matchable {
+	// TODO(stasm): Cache PluralRules.
+	// TODO(stasm): Support other options.
+
 	if (arg === null) {
 		throw new TypeError();
 	}
-	let raw_value: number;
-	let arg_value = ctx.resolveOperand(arg);
-	if (arg_value instanceof RuntimeString) {
-		raw_value = parseInt(arg_value.value);
-	} else if (arg_value instanceof RuntimeNumber) {
-		raw_value = arg_value.value;
-	} else {
-		throw new TypeError();
+
+	let resolved_opts: Intl.PluralRulesOptions = {};
+	if (opts.has("type")) {
+		let type_value = ctx.resolveOperand(opts.get("type"));
+		if (type_value instanceof RuntimeString) {
+			// TODO(stasm): Validate type value.
+			resolved_opts.type = type_value.value as Intl.PluralRuleType;
+		}
+		// TODO(stasm): Handle other types.
 	}
 
-	// TODO(stasm): Cache PluralRules.
-	let pr = new Intl.PluralRules(ctx.locale);
-	let category = pr.select(raw_value);
-	return new PluralMatcher(category, raw_value);
+	let arg_value = ctx.resolveOperand(arg);
+	if (arg_value instanceof RuntimeNumber) {
+		let pr = new Intl.PluralRules(ctx.locale, {
+			minimumIntegerDigits: arg_value.opts.minimumIntegerDigits,
+			minimumFractionDigits: arg_value.opts.minimumFractionDigits,
+			maximumFractionDigits: arg_value.opts.maximumFractionDigits,
+			minimumSignificantDigits: arg_value.opts.minimumSignificantDigits,
+			maximumSignificantDigits: arg_value.opts.maximumSignificantDigits,
+			...resolved_opts,
+		});
+		let rule = pr.select(arg_value.value);
+		return new PluralMatcher(rule, arg_value.value);
+	}
+	if (arg_value instanceof RuntimeString) {
+		let num_value = parseInt(arg_value.value);
+		let pr = new Intl.PluralRules(ctx.locale, resolved_opts);
+		let category = pr.select(num_value);
+		return new PluralMatcher(category, num_value);
+	}
+	throw new TypeError();
 }
