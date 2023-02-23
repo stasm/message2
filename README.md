@@ -1,19 +1,30 @@
 # message2
 
-An experimental reference implementation of the MessageFormat 2 standard in TypeScript.
+An experimental reference implementation of the [MessageFormat 2](https://github.com/unicode-org/message-format-wg) standard in TypeScript.
 
-## Goals
+```js
+let message = new MessageFormat("en-US", "{Hello, {$userName}!}");
+let value = message.format({userName: new RuntimeString("Alice")}),
+assert.equal(value, "Hello, Alice!");
+```
+
+For more information about the message syntax, consult the upstream [spec/syntax.md](https://github.com/unicode-org/message-format-wg/blob/main/spec/syntax.md).
+
+## Goals of This Implementation
+
+This is a rsearch project, currently not intended for production use.
 
 * Follow the spec development and provide an additional implementation.
 * Validate the ideas discussed in MFWG through an implementation.
 * Demonstrate one concrete parsing and runtime model to help these discussions.
 
-## Design Principles
+Additionally, I attempted to follow the principles and guidelines listed below:
 
 * Strict conformance to the spec.
 * All formatting and matching functions implemented as custom functions in userspace.
 * No `any` or `unknown`; use interfaces and generics instead.
 * No shortcuts nor special cases in the code.
+* Optimize the code for dicussion and review.
 
 ## Overview
 
