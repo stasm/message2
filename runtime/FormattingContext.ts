@@ -37,7 +37,7 @@ export class FormattingContext {
 				if (func) {
 					yield func(this, null, element.opts);
 				} else {
-					throw new Error("todo");
+					throw new ReferenceError("Unknown formatting function: " + element.name);
 				}
 			} else if (element instanceof ast.OperandExpression) {
 				if (element.func) {
@@ -45,7 +45,9 @@ export class FormattingContext {
 					if (func) {
 						yield func(this, element.arg, element.func.opts);
 					} else {
-						throw new Error("todo");
+						throw new ReferenceError(
+							"Unknown formatting function: " + element.func.name
+						);
 					}
 				} else {
 					yield this.resolveOperand(element.arg);
@@ -65,7 +67,7 @@ export class FormattingContext {
 					let value = func(this, null, expression.opts);
 					resolved_selectors.push(value);
 				} else {
-					throw new Error("todo");
+					throw new ReferenceError("Unknown formatting function: " + expression.name);
 				}
 			} else if (expression.func) {
 				let func = Registry.matchers.get(expression.func.name);
@@ -73,7 +75,9 @@ export class FormattingContext {
 					let value = func(this, expression.arg, expression.func.opts);
 					resolved_selectors.push(value);
 				} else {
-					throw new Error("todo");
+					throw new ReferenceError(
+						"Unknown formatting function: " + expression.func.name
+					);
 				}
 			} else {
 				throw new Error("OperandExpressions without function calls cannot be selectors.");

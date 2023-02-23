@@ -2,8 +2,8 @@ import {FormattingContext, Matchable, RuntimeString, RuntimeValue} from "../runt
 import * as ast from "../syntax/ast.js";
 
 export class RuntimeNumber implements RuntimeValue {
-	public value: number;
-	public opts: Intl.NumberFormatOptions;
+	value: number;
+	opts: Intl.NumberFormatOptions;
 
 	constructor(value: number, opts: Intl.NumberFormatOptions = {}) {
 		this.value = value;
@@ -92,8 +92,8 @@ export function format_number(
 }
 
 export class PluralMatcher implements Matchable {
-	public rule: Intl.LDMLPluralRule;
-	public number: number;
+	rule: Intl.LDMLPluralRule;
+	number: number;
 
 	constructor(rule: Intl.LDMLPluralRule, number: number) {
 		this.rule = rule;
