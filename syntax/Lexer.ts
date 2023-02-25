@@ -270,7 +270,7 @@ export class Lexer {
 			return this.#expect_nmtoken(current);
 		}
 		if (current.value === "*") {
-			return new tokens.Star(current.value);
+			return new tokens.Asterisk(current.value);
 		}
 		if (current.value === "(") {
 			return this.#expect_literal(current);

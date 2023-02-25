@@ -39,8 +39,8 @@ export class Literal extends Token {
 	kind = "literal";
 }
 
-export class Star extends Token {
-	kind = "star";
+export class Asterisk extends Token {
+	kind = "asterisk";
 }
 
 export class Text extends Token {

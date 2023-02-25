@@ -83,7 +83,7 @@ export class FormattingContext {
 		to_next_variant: for (let variant of variants) {
 			to_next_key: for (let i = 0; i < resolved_selectors.length; i++) {
 				let key = variant.keys[i];
-				if (key instanceof ast.Star) {
+				if (key instanceof ast.Asterisk) {
 					// The default key always matches.
 					continue to_next_key;
 				}

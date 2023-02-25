@@ -33,7 +33,7 @@ export class Variant extends SyntaxNode {
 	}
 }
 
-export type VariantKey = Literal | Star;
+export type VariantKey = Literal | Asterisk;
 
 export type Pattern = Array<PatternElement>;
 
@@ -123,6 +123,6 @@ export class Literal extends SyntaxNode {
 	}
 }
 
-export class Star extends SyntaxNode {
-	kind = "Star" as const;
+export class Asterisk extends SyntaxNode {
+	kind = "Asterisk" as const;
 }

@@ -65,14 +65,14 @@ export class Parser extends ast.Message {
 	}
 
 	#parse_variant(): ast.Variant {
-		let keys: Array<ast.Literal | ast.Star> = [];
+		let keys: Array<ast.Literal | ast.Asterisk> = [];
 		while (true) {
 			let current = this.#next_token();
 			if (current instanceof tokens.Punctuator && current.value === "{") {
 				break;
-			} else if (current instanceof tokens.Star) {
-				let star = new ast.Star();
-				keys.push(star);
+			} else if (current instanceof tokens.Asterisk) {
+				let asterisk = new ast.Asterisk();
+				keys.push(asterisk);
 			} else {
 				// tokens.Literal or tokens.Nmtoken.
 				let literal = new ast.Literal(current.value);
