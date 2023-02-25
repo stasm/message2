@@ -27,7 +27,7 @@ export class RuntimeNumber implements RuntimeValue {
 	}
 
 	match(ctx: FormattingContext, key: ast.Literal) {
-		return this.value === parseInt(key.value);
+		return this.value === parseFloat(key.value);
 	}
 }
 
@@ -85,7 +85,7 @@ export function format_number(ctx: FormattingContext, arg: ast.Operand | null, o
 		return RuntimeNumber.from(arg_value, resolved_opts);
 	}
 	if (arg_value instanceof RuntimeString) {
-		let raw_value = parseInt(arg_value.value);
+		let raw_value = parseFloat(arg_value.value);
 		return new RuntimeNumber(raw_value, resolved_opts);
 	}
 	throw new TypeError();
@@ -138,7 +138,7 @@ export function match_plural(ctx: FormattingContext, arg: ast.Operand | null, op
 		return new PluralMatcher(rule, arg_value.value);
 	}
 	if (arg_value instanceof RuntimeString) {
-		let num_value = parseInt(arg_value.value);
+		let num_value = parseFloat(arg_value.value);
 		let pr = new Intl.PluralRules(ctx.locale, resolved_opts);
 		let category = pr.select(num_value);
 		return new PluralMatcher(category, num_value);
