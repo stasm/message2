@@ -21,26 +21,6 @@ export class FormattingContext {
 		}
 	}
 
-	formatPattern(pattern: ast.Pattern): string {
-		let output = "";
-		for (let value of this.resolvePattern(pattern)) {
-			output += value.formatToString(this);
-		}
-		return output;
-	}
-
-	*resolvePattern(pattern: ast.Pattern): IterableIterator<RuntimeValue> {
-		for (let element of pattern) {
-			if (element instanceof ast.Text) {
-				yield new RuntimeString(element.value);
-			} else if (element instanceof ast.FunctionExpression || element instanceof ast.OperandExpression) {
-				yield this.#resolveExpression(element);
-			} else {
-				// TODO(stasm): markup
-			}
-		}
-	}
-
 	selectVariant(variants: Array<ast.Variant>, selectors: Array<ast.Expression>): ast.Variant {
 		let resolved_selectors: Array<RuntimeValue> = [];
 		for (let selector of selectors) {
@@ -68,6 +48,18 @@ export class FormattingContext {
 		}
 
 		throw new RangeError("No variant matched the selectors.");
+	}
+
+	*resolvePattern(pattern: ast.Pattern): IterableIterator<RuntimeValue> {
+		for (let element of pattern) {
+			if (element instanceof ast.Text) {
+				yield new RuntimeString(element.value);
+			} else if (element instanceof ast.FunctionExpression || element instanceof ast.OperandExpression) {
+				yield this.#resolveExpression(element);
+			} else {
+				// TODO(stasm): markup
+			}
+		}
 	}
 
 	resolveOperand(node: ast.Operand | undefined): RuntimeValue {
