@@ -21,7 +21,7 @@ export class MessageFormat {
 		return ctx.formatPattern(variant.pattern);
 	}
 
-	*formatToParts(vars: Record<string, RuntimeValue>): IterableIterator<MessagePart | OpaquePart> {
+	*formatToParts(vars: Record<string, RuntimeValue>): IterableIterator<MessagePart> {
 		let ctx = new FormattingContext(this.locale, vars, this.ast.declarations);
 		let variant = ctx.selectVariant(this.ast.variants, this.ast.selectors);
 		for (let value of ctx.resolvePattern(variant.pattern)) {
@@ -41,9 +41,4 @@ export class MessageFormat {
 export interface MessagePart {
 	type: string;
 	value: string;
-}
-
-export interface OpaquePart {
-	type: "opaque";
-	value: unknown;
 }

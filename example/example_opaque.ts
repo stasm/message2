@@ -1,24 +1,25 @@
 import {test} from "tap";
-import {FormattingContext, MessageFormat, OpaquePart, RuntimeValue} from "../runtime/index.js";
+import {FormattingContext, MessageFormat, RuntimeValue} from "../runtime/index.js";
 import * as ast from "../syntax/ast.js";
 
 // We want to pass it into the translation and get it back out unformatted, in
 // the correct position in the sentence, via formatToParts.
-class SomeUnstringifiableClass {}
+class UnstringifiableClass {}
 
 class WrappedValue implements RuntimeValue {
-	public value: SomeUnstringifiableClass;
+	label = "<UnstringifiableClass>";
+	value: UnstringifiableClass;
 
-	constructor(value: SomeUnstringifiableClass) {
+	constructor(value: UnstringifiableClass) {
 		this.value = value;
 	}
 
 	formatToString(ctx: FormattingContext): string {
-		throw new Error("Method not implemented.");
+		return this.label;
 	}
 
-	*formatToParts(ctx: FormattingContext): Generator<OpaquePart> {
-		yield {type: "opaque", value: this.value};
+	*formatToParts(ctx: FormattingContext) {
+		yield {type: "opaque", value: this.label, instance: this.value};
 	}
 
 	match(ctx: FormattingContext, key: ast.Literal) {
@@ -30,7 +31,7 @@ test("Pass an opaque instance as a variable", (tap) => {
 	// "Ready? Then {$submitButton}!"
 	let message = new MessageFormat("en-US", "{Ready? Then {$submitButton}!}");
 
-	let instance = new SomeUnstringifiableClass();
+	let instance = new UnstringifiableClass();
 
 	tap.same(
 		message.formatToParts({
@@ -38,7 +39,7 @@ test("Pass an opaque instance as a variable", (tap) => {
 		}),
 		[
 			{type: "literal", value: "Ready? Then "},
-			{type: "opaque", value: instance},
+			{type: "opaque", value: "<UnstringifiableClass>", instance: instance},
 			{type: "literal", value: "!"},
 		]
 	);
