@@ -16,7 +16,7 @@ export class FormattingContext {
 		this.vars = vars;
 
 		for (let local of locals) {
-			this.lets.set(local.name, this.resolveExpression(local.expr));
+			this.lets.set(local.name, this.#resolveFormattable(local.expr));
 		}
 	}
 
@@ -33,20 +33,10 @@ export class FormattingContext {
 			if (element instanceof ast.Text) {
 				yield new RuntimeString(element.value);
 			} else if (element instanceof ast.FunctionExpression) {
-				let func = Registry.formatters.get(element.name);
-				if (func) {
-					yield func(this, null, element.opts);
-				} else {
-					throw new ReferenceError("Unknown formatting function: " + element.name);
-				}
+				yield this.#callFormatter(element, null);
 			} else if (element instanceof ast.OperandExpression) {
 				if (element.func) {
-					let func = Registry.formatters.get(element.func.name);
-					if (func) {
-						yield func(this, element.arg, element.func.opts);
-					} else {
-						throw new ReferenceError("Unknown formatting function: " + element.func.name);
-					}
+					yield this.#callFormatter(element.func, element.arg);
 				} else {
 					yield this.resolveOperand(element.arg);
 				}
@@ -58,25 +48,15 @@ export class FormattingContext {
 
 	selectVariant(variants: Array<ast.Variant>, selectors: Array<ast.Expression>): ast.Variant {
 		let resolved_selectors: Array<Matchable> = [];
-		for (let expression of selectors) {
-			if (expression instanceof ast.FunctionExpression) {
-				let func = Registry.matchers.get(expression.name);
-				if (func) {
-					let value = func(this, null, expression.opts);
-					resolved_selectors.push(value);
-				} else {
-					throw new ReferenceError("Unknown formatting function: " + expression.name);
-				}
-			} else if (expression.func) {
-				let func = Registry.matchers.get(expression.func.name);
-				if (func) {
-					let value = func(this, expression.arg, expression.func.opts);
-					resolved_selectors.push(value);
-				} else {
-					throw new ReferenceError("Unknown formatting function: " + expression.func.name);
-				}
+		for (let selector of selectors) {
+			if (selector instanceof ast.FunctionExpression) {
+				let value = this.#callMatcher(selector, null);
+				resolved_selectors.push(value);
+			} else if (selector.func) {
+				let value = this.#callMatcher(selector.func, selector.arg);
+				resolved_selectors.push(value);
 			} else {
-				throw new Error("OperandExpressions without function calls cannot be selectors.");
+				throw new EvalError("OperandExpressions without function calls cannot be selectors.");
 			}
 		}
 
@@ -119,22 +99,29 @@ export class FormattingContext {
 		throw new TypeError("Invalid node type.");
 	}
 
-	resolveExpression(expr: ast.Expression): Formattable {
+	#resolveFormattable(expr: ast.Expression) {
 		if (expr instanceof ast.FunctionExpression) {
-			let func = Registry.formatters.get(expr.name);
-			if (func) {
-				return func(this, null, expr.opts);
-			}
-			throw new Error("todo");
+			return this.#callFormatter(expr, null);
 		}
 		if (expr.func) {
-			let func = Registry.formatters.get(expr.func.name);
-			if (func) {
-				return func(this, expr.arg, expr.func.opts);
-			}
-			throw new Error("todo");
-		} else {
-			return this.resolveOperand(expr.arg);
+			return this.#callFormatter(expr.func, expr.arg);
 		}
+		return this.resolveOperand(expr.arg);
+	}
+
+	#callFormatter(expr: ast.FunctionExpression, arg: ast.Operand | null) {
+		let func = Registry.formatters.get(expr.name);
+		if (func) {
+			return func(this, arg, expr.opts);
+		}
+		throw new ReferenceError("Unknown formatter function: " + expr.name);
+	}
+
+	#callMatcher(expr: ast.FunctionExpression, arg: ast.Operand | null) {
+		let func = Registry.matchers.get(expr.name);
+		if (func) {
+			return func(this, arg, expr.opts);
+		}
+		throw new ReferenceError("Unknown matcher function: " + expr.name);
 	}
 }
