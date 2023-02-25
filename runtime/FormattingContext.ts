@@ -16,7 +16,8 @@ export class FormattingContext {
 		this.vars = vars;
 
 		for (let declaration of declarations) {
-			this.lets.set(declaration.name, this.#resolveExpression(declaration.expr));
+			let value = this.#resolveExpression(declaration.expr);
+			this.lets.set(declaration.name, value);
 		}
 	}
 
@@ -32,14 +33,8 @@ export class FormattingContext {
 		for (let element of pattern) {
 			if (element instanceof ast.Text) {
 				yield new RuntimeString(element.value);
-			} else if (element instanceof ast.FunctionExpression) {
-				yield this.#resolveInvocation(element, null);
-			} else if (element instanceof ast.OperandExpression) {
-				if (element.func) {
-					yield this.#resolveInvocation(element.func, element.arg);
-				} else {
-					yield this.resolveOperand(element.arg);
-				}
+			} else if (element instanceof ast.FunctionExpression || element instanceof ast.OperandExpression) {
+				yield this.#resolveExpression(element);
 			} else {
 				// TODO(stasm): markup
 			}
@@ -49,20 +44,8 @@ export class FormattingContext {
 	selectVariant(variants: Array<ast.Variant>, selectors: Array<ast.Expression>): ast.Variant {
 		let resolved_selectors: Array<RuntimeValue> = [];
 		for (let selector of selectors) {
-			if (selector instanceof ast.FunctionExpression) {
-				let value = this.#resolveInvocation(selector, null);
-				resolved_selectors.push(value);
-			} else if (selector instanceof ast.OperandExpression) {
-				if (selector.func) {
-					let value = this.#resolveInvocation(selector.func, selector.arg);
-					resolved_selectors.push(value);
-				} else {
-					let value = this.resolveOperand(selector.arg);
-					resolved_selectors.push(value);
-				}
-			} else {
-				throw new EvalError("Markup cannot be used as selectors.");
-			}
+			let value = this.#resolveExpression(selector);
+			resolved_selectors.push(value);
 		}
 
 		to_next_variant: for (let variant of variants) {
@@ -87,9 +70,6 @@ export class FormattingContext {
 		throw new RangeError("No variant matched the selectors.");
 	}
 
-	resolveOperand(node: ast.Literal): RuntimeString;
-	resolveOperand(node: ast.VariableReference): RuntimeValue;
-	resolveOperand(node: ast.Operand | undefined): RuntimeValue;
 	resolveOperand(node: ast.Operand | undefined): RuntimeValue {
 		if (node instanceof ast.Literal) {
 			return new RuntimeString(node.value);
@@ -103,19 +83,13 @@ export class FormattingContext {
 
 	#resolveExpression(expr: ast.Expression) {
 		if (expr instanceof ast.FunctionExpression) {
-			return this.#resolveInvocation(expr, null);
+			let func = Registry.getFunction(expr.name);
+			return func(this, null, expr.opts);
 		}
 		if (expr.func) {
-			return this.#resolveInvocation(expr.func, expr.arg);
+			let func = Registry.getFunction(expr.func.name);
+			return func(this, expr.arg, expr.func.opts);
 		}
 		return this.resolveOperand(expr.arg);
-	}
-
-	#resolveInvocation(expr: ast.FunctionExpression, arg: ast.Operand | null) {
-		let func = Registry.functions.get(expr.name);
-		if (func) {
-			return func(this, arg, expr.opts);
-		}
-		throw new ReferenceError("Unknown custom function: " + expr.name);
 	}
 }
