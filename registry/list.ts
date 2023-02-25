@@ -1,6 +1,6 @@
-import {FormattingContext, Matchable, RuntimeString, RuntimeValue} from "../runtime/index.js";
+import {FormattingContext, RuntimeString, RuntimeValue} from "../runtime/index.js";
 import * as ast from "../syntax/ast.js";
-import {PluralMatcher} from "./number.js";
+import {RuntimePlural} from "./plural.js";
 
 export class RuntimeList implements RuntimeValue {
 	value: Array<RuntimeValue>;
@@ -34,16 +34,13 @@ export class RuntimeList implements RuntimeValue {
 	}
 }
 
-export function match_length(ctx: FormattingContext, arg: ast.Operand | null, opts: ast.Options): Matchable {
+export function match_length(ctx: FormattingContext, arg: ast.Operand | null, opts: ast.Options): RuntimeValue {
 	if (arg === null) {
 		throw new TypeError();
 	}
 	let elements = ctx.resolveOperand(arg);
 	if (elements instanceof RuntimeList) {
-		// TODO(stasm): Cache PluralRules.
-		let pr = new Intl.PluralRules(ctx.locale);
-		let category = pr.select(elements.value.length);
-		return new PluralMatcher(category, elements.value.length);
+		return new RuntimePlural(elements.value.length);
 	}
 	throw new TypeError();
 }

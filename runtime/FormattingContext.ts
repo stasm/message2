@@ -1,14 +1,14 @@
 import * as ast from "../syntax/ast.js";
 import {Registry} from "./registry.js";
 import {RuntimeString} from "./RuntimeString.js";
-import {Formattable, Matchable, RuntimeValue} from "./RuntimeValue.js";
+import {RuntimeValue} from "./RuntimeValue.js";
 
 // Resolution context for a single formatMessage() call.
 
 export class FormattingContext {
 	locale: string;
 	vars: Record<string, RuntimeValue>;
-	lets: Map<string, Formattable> = new Map();
+	lets: Map<string, RuntimeValue> = new Map();
 	// TODO(stasm): expose cached formatters, etc.
 
 	constructor(locale: string, vars: Record<string, RuntimeValue>, declarations: Array<ast.Declaration>) {
@@ -16,7 +16,7 @@ export class FormattingContext {
 		this.vars = vars;
 
 		for (let declaration of declarations) {
-			this.lets.set(declaration.name, this.#resolveFormattable(declaration.expr));
+			this.lets.set(declaration.name, this.#resolveExpression(declaration.expr));
 		}
 	}
 
@@ -28,15 +28,15 @@ export class FormattingContext {
 		return output;
 	}
 
-	*resolvePattern(pattern: ast.Pattern): IterableIterator<Formattable> {
+	*resolvePattern(pattern: ast.Pattern): IterableIterator<RuntimeValue> {
 		for (let element of pattern) {
 			if (element instanceof ast.Text) {
 				yield new RuntimeString(element.value);
 			} else if (element instanceof ast.FunctionExpression) {
-				yield this.#callFormatter(element, null);
+				yield this.#resolveInvocation(element, null);
 			} else if (element instanceof ast.OperandExpression) {
 				if (element.func) {
-					yield this.#callFormatter(element.func, element.arg);
+					yield this.#resolveInvocation(element.func, element.arg);
 				} else {
 					yield this.resolveOperand(element.arg);
 				}
@@ -47,16 +47,21 @@ export class FormattingContext {
 	}
 
 	selectVariant(variants: Array<ast.Variant>, selectors: Array<ast.Expression>): ast.Variant {
-		let resolved_selectors: Array<Matchable> = [];
+		let resolved_selectors: Array<RuntimeValue> = [];
 		for (let selector of selectors) {
 			if (selector instanceof ast.FunctionExpression) {
-				let value = this.#callMatcher(selector, null);
+				let value = this.#resolveInvocation(selector, null);
 				resolved_selectors.push(value);
-			} else if (selector.func) {
-				let value = this.#callMatcher(selector.func, selector.arg);
-				resolved_selectors.push(value);
+			} else if (selector instanceof ast.OperandExpression) {
+				if (selector.func) {
+					let value = this.#resolveInvocation(selector.func, selector.arg);
+					resolved_selectors.push(value);
+				} else {
+					let value = this.resolveOperand(selector.arg);
+					resolved_selectors.push(value);
+				}
 			} else {
-				throw new EvalError("OperandExpressions without function calls cannot be selectors.");
+				throw new EvalError("Markup cannot be used as selectors.");
 			}
 		}
 
@@ -83,9 +88,9 @@ export class FormattingContext {
 	}
 
 	resolveOperand(node: ast.Literal): RuntimeString;
-	resolveOperand(node: ast.VariableReference): Formattable;
-	resolveOperand(node: ast.Operand | undefined): Formattable;
-	resolveOperand(node: ast.Operand | undefined): Formattable {
+	resolveOperand(node: ast.VariableReference): RuntimeValue;
+	resolveOperand(node: ast.Operand | undefined): RuntimeValue;
+	resolveOperand(node: ast.Operand | undefined): RuntimeValue {
 		if (node instanceof ast.Literal) {
 			return new RuntimeString(node.value);
 		}
@@ -96,29 +101,21 @@ export class FormattingContext {
 		throw new TypeError("Invalid node type.");
 	}
 
-	#resolveFormattable(expr: ast.Expression) {
+	#resolveExpression(expr: ast.Expression) {
 		if (expr instanceof ast.FunctionExpression) {
-			return this.#callFormatter(expr, null);
+			return this.#resolveInvocation(expr, null);
 		}
 		if (expr.func) {
-			return this.#callFormatter(expr.func, expr.arg);
+			return this.#resolveInvocation(expr.func, expr.arg);
 		}
 		return this.resolveOperand(expr.arg);
 	}
 
-	#callFormatter(expr: ast.FunctionExpression, arg: ast.Operand | null) {
-		let func = Registry.formatters.get(expr.name);
+	#resolveInvocation(expr: ast.FunctionExpression, arg: ast.Operand | null) {
+		let func = Registry.functions.get(expr.name);
 		if (func) {
 			return func(this, arg, expr.opts);
 		}
-		throw new ReferenceError("Unknown formatter function: " + expr.name);
-	}
-
-	#callMatcher(expr: ast.FunctionExpression, arg: ast.Operand | null) {
-		let func = Registry.matchers.get(expr.name);
-		if (func) {
-			return func(this, arg, expr.opts);
-		}
-		throw new ReferenceError("Unknown matcher function: " + expr.name);
+		throw new ReferenceError("Unknown custom function: " + expr.name);
 	}
 }

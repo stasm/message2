@@ -3,9 +3,9 @@ import {format_list, match_length, RuntimeList} from "../registry/list.js";
 import {map_person, Person} from "../registry/person.js";
 import {MessageFormat} from "../runtime/index.js";
 
-MessageFormat.registerMatcher("length", match_length);
-MessageFormat.registerFormatter("list", format_list);
-MessageFormat.registerFormatter("person.each", map_person);
+MessageFormat.registerFunction("length", match_length);
+MessageFormat.registerFunction("list", format_list);
+MessageFormat.registerFunction("person.each", map_person);
 
 test("Fancy list formatting, first names only", (tap) => {
 	let message = new MessageFormat(

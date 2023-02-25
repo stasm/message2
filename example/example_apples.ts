@@ -1,9 +1,10 @@
 import {test} from "tap";
-import {format_number, match_plural, RuntimeNumber} from "../registry/number.js";
+import {format_number, RuntimeNumber} from "../registry/number.js";
+import {match_plural} from "../registry/plural.js";
 import {MessageFormat} from "../runtime/index.js";
 
-MessageFormat.registerFormatter("number", format_number);
-MessageFormat.registerMatcher("plural", match_plural);
+MessageFormat.registerFunction("number", format_number);
+MessageFormat.registerFunction("plural", match_plural);
 
 test("Plural selection depends on number formatting (English 1)", (tap) => {
 	let message = new MessageFormat(

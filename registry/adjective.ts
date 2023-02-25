@@ -1,9 +1,9 @@
-import {Formattable, FormattingContext, RuntimeValue} from "../runtime/index.js";
+import {FormattingContext, RuntimeValue} from "../runtime/index.js";
 import * as ast from "../syntax/ast.js";
-import {EnglishNoun, PolishNoun} from "./noun.js";
+import {PolishNoun} from "./noun.js";
 import {RuntimeTerm, Term} from "./term.js";
 
-export function format_adjective(ctx: FormattingContext, arg: ast.Operand | null, opts: ast.Options): Formattable {
+export function format_adjective(ctx: FormattingContext, arg: ast.Operand | null, opts: ast.Options): RuntimeValue {
 	if (arg === null) {
 		throw new TypeError();
 	}
@@ -18,26 +18,17 @@ export function format_adjective(ctx: FormattingContext, arg: ast.Operand | null
 	}
 }
 
-interface EnglishAdjectiveOptions {
-	accord?: EnglishNoun;
-}
-
 export class EnglishAdjective implements RuntimeValue {
 	canonical: string;
 	values: Term;
-	opts: EnglishAdjectiveOptions;
 
-	constructor(term: Term, opts: EnglishAdjectiveOptions = {}) {
+	constructor(term: Term) {
 		this.canonical = term.canonical;
 		this.values = {...term};
-		this.opts = opts;
 	}
 
-	static from(other: EnglishAdjective, extend_opts?: EnglishAdjectiveOptions) {
-		return new this(other.values, {
-			...other.opts,
-			...extend_opts,
-		});
+	static from(other: EnglishAdjective) {
+		return new this(other.values);
 	}
 
 	formatToString(ctx: FormattingContext) {
@@ -56,7 +47,7 @@ export class EnglishAdjective implements RuntimeValue {
 	}
 }
 
-function format_adjective_en(ctx: FormattingContext, arg: ast.Operand, opts: ast.Options): Formattable {
+function format_adjective_en(ctx: FormattingContext, arg: ast.Operand, opts: ast.Options): RuntimeValue {
 	let arg_value = ctx.resolveOperand(arg);
 	if (arg_value instanceof RuntimeTerm) {
 		let term = arg_value.get_term(ctx);
@@ -69,7 +60,7 @@ interface PolishAdjectiveOptions {
 	// https://unicode.org/reports/tr35/tr35-general.html#Case
 	// grammatical_case?: "nominative" | "genitive" | "accusative";
 	// grammatical_number?: "one" | "few" | "many";
-	accord?: PolishNoun;
+	accord: PolishNoun | null;
 }
 
 export class PolishAdjective implements RuntimeValue {
@@ -77,13 +68,16 @@ export class PolishAdjective implements RuntimeValue {
 	values: Term;
 	opts: PolishAdjectiveOptions;
 
-	constructor(term: Term, opts: PolishAdjectiveOptions) {
+	constructor(term: Term, opts?: Partial<PolishAdjectiveOptions>) {
 		this.canonical = term.canonical;
 		this.values = {...term};
-		this.opts = opts;
+		this.opts = {
+			accord: null,
+			...opts,
+		};
 	}
 
-	static from(other: PolishNoun, extend_opts?: PolishAdjectiveOptions) {
+	static from(other: PolishNoun, extend_opts?: Partial<PolishAdjectiveOptions>) {
 		return new this(other.values, {
 			...other.opts,
 			...extend_opts,
@@ -129,8 +123,8 @@ export class PolishAdjective implements RuntimeValue {
 	}
 }
 
-function format_adjective_pl(ctx: FormattingContext, arg: ast.Operand, opts: ast.Options): Formattable {
-	let resolved_opts: PolishAdjectiveOptions = {};
+function format_adjective_pl(ctx: FormattingContext, arg: ast.Operand, opts: ast.Options): RuntimeValue {
+	let resolved_opts: Partial<PolishAdjectiveOptions> = {};
 	if (opts.has("accord")) {
 		let opt_value = ctx.resolveOperand(opts.get("accord"));
 		if (opt_value instanceof PolishNoun) {

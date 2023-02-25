@@ -1,7 +1,7 @@
 import * as ast from "../syntax/ast.js";
 import {Parser} from "../syntax/Parser.js";
 import {FormattingContext} from "./FormattingContext.js";
-import {FormattingFunc, MatchingFunc, Registry} from "./registry.js";
+import {CustomFunction, Registry} from "./registry.js";
 import {RuntimeValue} from "./RuntimeValue.js";
 
 export class MessageFormat {
@@ -29,12 +29,8 @@ export class MessageFormat {
 		}
 	}
 
-	static registerFormatter(name: string, func: FormattingFunc) {
-		Registry.formatters.set(name, func);
-	}
-
-	static registerMatcher(name: string, func: MatchingFunc) {
-		Registry.matchers.set(name, func);
+	static registerFunction(name: string, func: CustomFunction) {
+		Registry.functions.set(name, func);
 	}
 }
 

@@ -1,9 +1,9 @@
-import {Formattable, FormattingContext, Matchable, RuntimeString, RuntimeValue} from "../runtime/index.js";
+import {FormattingContext, RuntimeString, RuntimeValue} from "../runtime/index.js";
 import * as ast from "../syntax/ast.js";
 import {RuntimeNumber} from "./number.js";
 import {RuntimeTerm, Term} from "./term.js";
 
-export function format_noun(ctx: FormattingContext, arg: ast.Operand | null, opts: ast.Options): Formattable {
+export function format_noun(ctx: FormattingContext, arg: ast.Operand | null, opts: ast.Options): RuntimeValue {
 	if (arg === null) {
 		throw new TypeError();
 	}
@@ -29,7 +29,7 @@ export class EnglishNoun implements RuntimeValue {
 	values: Term;
 	opts: EnglishNounOptions;
 
-	constructor(term: Term, opts: Partial<EnglishNounOptions> = {}) {
+	constructor(term: Term, opts?: Partial<EnglishNounOptions>) {
 		this.canonical = term.canonical;
 		this.values = {...term};
 		this.opts = {
@@ -39,7 +39,7 @@ export class EnglishNoun implements RuntimeValue {
 		};
 	}
 
-	static from(other: EnglishNoun, extend_opts?: EnglishNounOptions) {
+	static from(other: EnglishNoun, extend_opts?: Partial<EnglishNounOptions>) {
 		return new this(other.values, {
 			...other.opts,
 			...extend_opts,
@@ -65,7 +65,7 @@ export class EnglishNoun implements RuntimeValue {
 	}
 }
 
-function format_noun_en(ctx: FormattingContext, arg: ast.Operand, opts: ast.Options): Formattable {
+function format_noun_en(ctx: FormattingContext, arg: ast.Operand, opts: ast.Options): RuntimeValue {
 	let resolved_opts: Partial<EnglishNounOptions> = {};
 	if (opts.has("case")) {
 		let opt_value = ctx.resolveOperand(opts.get("case"));
@@ -85,7 +85,9 @@ function format_noun_en(ctx: FormattingContext, arg: ast.Operand, opts: ast.Opti
 	}
 
 	let arg_value = ctx.resolveOperand(arg);
-	if (arg_value instanceof RuntimeTerm) {
+	if (arg_value instanceof EnglishNoun) {
+		return EnglishNoun.from(arg_value, resolved_opts);
+	} else if (arg_value instanceof RuntimeTerm) {
 		let term = arg_value.get_term(ctx);
 		return new EnglishNoun(term, resolved_opts);
 	}
@@ -97,6 +99,8 @@ interface PolishNounOptions {
 	// Omit dative, instrumental, locative, and vocative for the sake of the example.
 	grammatical_case: "nominative" | "genitive" | "accusative";
 	grammatical_number: "one" | "few" | "many";
+	// Which field to match when the noun is used as a selector?
+	inspect_property: null | "gender";
 }
 
 export class PolishNoun implements RuntimeValue {
@@ -105,18 +109,19 @@ export class PolishNoun implements RuntimeValue {
 	values: Term;
 	opts: PolishNounOptions;
 
-	constructor(term: Term, opts: Partial<PolishNounOptions> = {}) {
+	constructor(term: Term, opts?: Partial<PolishNounOptions>) {
 		this.canonical = term.canonical;
 		this.gender = term.gender;
 		this.values = {...term};
 		this.opts = {
 			grammatical_case: "nominative",
 			grammatical_number: "one",
+			inspect_property: null,
 			...opts,
 		};
 	}
 
-	static from(other: PolishNoun, extend_opts?: PolishNounOptions) {
+	static from(other: PolishNoun, extend_opts?: Partial<PolishNounOptions>) {
 		return new this(other.values, {
 			...other.opts,
 			...extend_opts,
@@ -138,11 +143,16 @@ export class PolishNoun implements RuntimeValue {
 	}
 
 	match(ctx: FormattingContext, key: ast.Literal) {
-		return false;
+		switch (this.opts.inspect_property) {
+			case "gender":
+				return this.gender === key.value;
+			default:
+				return false;
+		}
 	}
 }
 
-function format_noun_pl(ctx: FormattingContext, arg: ast.Operand, opts: ast.Options): Formattable {
+function format_noun_pl(ctx: FormattingContext, arg: ast.Operand, opts: ast.Options): RuntimeValue {
 	let resolved_opts: Partial<PolishNounOptions> = {};
 	if (opts.has("case")) {
 		let opt_value = ctx.resolveOperand(opts.get("case"));
@@ -177,55 +187,21 @@ function format_noun_pl(ctx: FormattingContext, arg: ast.Operand, opts: ast.Opti
 			}
 		}
 	}
+	if (opts.has("inspect")) {
+		let opt_value = ctx.resolveOperand(opts.get("inspect"));
+		if (opt_value instanceof RuntimeString) {
+			if (opt_value.value === "gender") {
+				resolved_opts.inspect_property = opt_value.value;
+			}
+		}
+	}
 
 	let arg_value = ctx.resolveOperand(arg);
-	if (arg_value instanceof RuntimeTerm) {
+	if (arg_value instanceof PolishNoun) {
+		return PolishNoun.from(arg_value, resolved_opts);
+	} else if (arg_value instanceof RuntimeTerm) {
 		let term = arg_value.get_term(ctx);
 		return new PolishNoun(term, resolved_opts);
-	}
-	throw new TypeError();
-}
-
-export class NounGenderMatcher implements Matchable {
-	gender?: string;
-
-	constructor(gender?: string) {
-		this.gender = gender;
-	}
-
-	match(ctx: FormattingContext, key: ast.Literal) {
-		switch (ctx.locale) {
-			case "pl":
-				return this.gender === key.value;
-			case "en":
-			default:
-				return false;
-		}
-	}
-}
-
-export function match_noun_gender(ctx: FormattingContext, arg: ast.Operand | null, opts: ast.Options): Matchable {
-	if (arg === null) {
-		throw new TypeError();
-	}
-
-	let arg_value = ctx.resolveOperand(arg);
-	if (arg_value instanceof EnglishNoun) {
-		return new NounGenderMatcher(undefined);
-	}
-	if (arg_value instanceof PolishNoun) {
-		return new NounGenderMatcher(arg_value.gender);
-	}
-	if (arg_value instanceof RuntimeTerm) {
-		let term = arg_value.get_term(ctx);
-		switch (ctx.locale) {
-			case "pl":
-				let noun = new PolishNoun(term);
-				return new NounGenderMatcher(noun.gender);
-			case "en":
-			default:
-				return new NounGenderMatcher(undefined);
-		}
 	}
 	throw new TypeError();
 }

@@ -2,7 +2,7 @@ import {test} from "tap";
 import {format_number, RuntimeNumber} from "../registry/number.js";
 import {MessageFormat} from "../runtime/index.js";
 
-MessageFormat.registerFormatter("number", format_number);
+MessageFormat.registerFunction("number", format_number);
 
 test("Number formatting (English)", (tap) => {
 	let message = new MessageFormat("en-US", "{Transferred {$payloadSize :number style=unit unit=megabyte}.}");

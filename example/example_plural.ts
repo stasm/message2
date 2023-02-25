@@ -1,10 +1,11 @@
 import {test} from "tap";
 import {match_equals} from "../registry/equals.js";
-import {match_plural, RuntimeNumber} from "../registry/number.js";
+import {RuntimeNumber} from "../registry/number.js";
+import {match_plural} from "../registry/plural.js";
 import {MessageFormat, RuntimeString} from "../runtime/index.js";
 
-MessageFormat.registerMatcher("equals", match_equals);
-MessageFormat.registerMatcher("plural", match_plural);
+MessageFormat.registerFunction("equals", match_equals);
+MessageFormat.registerFunction("plural", match_plural);
 
 test("Plural selection (English: one wins)", (tap) => {
 	let message = new MessageFormat(
