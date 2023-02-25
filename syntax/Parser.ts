@@ -19,8 +19,8 @@ export class Parser extends ast.Message {
 	parse(): ast.Message {
 		let current: tokens.Token | undefined = this.#next_token();
 		while (current instanceof tokens.Keyword && current.value === "let") {
-			let local = this.#parse_local();
-			this.locals.push(local);
+			let declaration = this.#parse_declaration();
+			this.declarations.push(declaration);
 			current = this.#next_token();
 		}
 
@@ -51,7 +51,7 @@ export class Parser extends ast.Message {
 		}
 	}
 
-	#parse_local(): ast.Local {
+	#parse_declaration(): ast.Declaration {
 		// Get variable name.
 		let name = this.#next_token();
 		// Skip '='.
@@ -61,7 +61,7 @@ export class Parser extends ast.Message {
 		// The first token of the expression.
 		let current = this.#next_token();
 		let expr = this.#parse_expression(current);
-		return new ast.Local(name.value, expr);
+		return new ast.Declaration(name.value, expr);
 	}
 
 	#parse_variant(): ast.Variant {

@@ -4,13 +4,13 @@ export abstract class SyntaxNode {
 
 export class Message extends SyntaxNode {
 	kind = "Message" as const;
-	locals: Array<Local> = [];
+	declarations: Array<Declaration> = [];
 	selectors: Array<Expression> = [];
 	variants: Array<Variant> = [];
 }
 
-export class Local extends SyntaxNode {
-	kind = "Local" as const;
+export class Declaration extends SyntaxNode {
+	kind = "Declaration" as const;
 	name: string;
 	expr: Expression;
 

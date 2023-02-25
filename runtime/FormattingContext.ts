@@ -11,12 +11,12 @@ export class FormattingContext {
 	lets: Map<string, Formattable> = new Map();
 	// TODO(stasm): expose cached formatters, etc.
 
-	constructor(locale: string, vars: Record<string, RuntimeValue>, locals: Array<ast.Local>) {
+	constructor(locale: string, vars: Record<string, RuntimeValue>, declarations: Array<ast.Declaration>) {
 		this.locale = locale;
 		this.vars = vars;
 
-		for (let local of locals) {
-			this.lets.set(local.name, this.#resolveFormattable(local.expr));
+		for (let declaration of declarations) {
+			this.lets.set(declaration.name, this.#resolveFormattable(declaration.expr));
 		}
 	}
 
@@ -90,11 +90,8 @@ export class FormattingContext {
 			return new RuntimeString(node.value);
 		}
 		if (node instanceof ast.VariableReference) {
-			let local = this.lets.get(node.name);
-			if (local) {
-				return local;
-			}
-			return this.vars[node.name];
+			// Local declarations shadow message arguments.
+			return this.lets.get(node.name) ?? this.vars[node.name];
 		}
 		throw new TypeError("Invalid node type.");
 	}
