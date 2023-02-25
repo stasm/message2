@@ -1,30 +1,231 @@
-import {get_term} from "../example/glossary.js";
-import {Formattable, FormattingContext, RuntimeString} from "../runtime/index.js";
+import {Formattable, FormattingContext, Matchable, RuntimeString, RuntimeValue} from "../runtime/index.js";
 import * as ast from "../syntax/ast.js";
+import {RuntimeNumber} from "./number.js";
+import {RuntimeTerm, Term} from "./term.js";
 
 export function format_noun(ctx: FormattingContext, arg: ast.Operand | null, opts: ast.Options): Formattable {
 	if (arg === null) {
 		throw new TypeError();
 	}
-	let noun_name = ctx.resolveOperand(arg);
-	if (!(noun_name instanceof RuntimeString)) {
-		throw new TypeError();
+
+	switch (ctx.locale) {
+		case "en":
+			return format_noun_en(ctx, arg, opts);
+		case "pl":
+			return format_noun_pl(ctx, arg, opts);
+		default:
+			throw new RangeError("Locale not supported by :noun: " + ctx.locale);
+	}
+}
+
+interface EnglishNounOptions {
+	// https://unicode.org/reports/tr35/tr35-general.html#Case
+	grammatical_case: "nominative" | "genitive";
+	grammatical_number: "one" | "other";
+}
+
+export class EnglishNoun implements RuntimeValue {
+	canonical: string;
+	values: Term;
+	opts: EnglishNounOptions;
+
+	constructor(term: Term, opts: Partial<EnglishNounOptions> = {}) {
+		this.canonical = term.canonical;
+		this.values = {...term};
+		this.opts = {
+			grammatical_case: "nominative",
+			grammatical_number: "one",
+			...opts,
+		};
 	}
 
-	let noun = get_term(ctx.locale, noun_name.value);
-	let value = noun["singular_nominative"].toString();
+	static from(other: EnglishNoun, extend_opts?: EnglishNounOptions) {
+		return new this(other.values, {
+			...other.opts,
+			...extend_opts,
+		});
+	}
 
-	if (opts.has("lettercase")) {
-		let lettercase = ctx.resolveOperand(opts.get("lettercase"));
-		if (lettercase instanceof RuntimeString) {
-			if (lettercase.value === "capitalized") {
-				// TODO(stasm): Support surrogates and astral codepoints.
-				return new RuntimeString(value[0].toUpperCase() + value.slice(1));
+	formatToString(ctx: FormattingContext) {
+		let key = this.opts.grammatical_number + "_" + this.opts.grammatical_case;
+		return this.values[key] ?? this.canonical;
+	}
+
+	*formatToParts(ctx: FormattingContext) {
+		yield {
+			type: "noun",
+			value: this.formatToString(ctx),
+			grammatical_case: this.opts.grammatical_case,
+			grammatical_number: this.opts.grammatical_number,
+		};
+	}
+
+	match(ctx: FormattingContext, key: ast.Literal) {
+		return false;
+	}
+}
+
+function format_noun_en(ctx: FormattingContext, arg: ast.Operand, opts: ast.Options): Formattable {
+	let resolved_opts: Partial<EnglishNounOptions> = {};
+	if (opts.has("case")) {
+		let opt_value = ctx.resolveOperand(opts.get("case"));
+		if (opt_value instanceof RuntimeString) {
+			if (opt_value.value === "nominative" || opt_value.value === "genitive") {
+				resolved_opts.grammatical_case = opt_value.value;
 			}
-		} else {
-			throw new TypeError();
+		}
+	}
+	if (opts.has("number")) {
+		let opt_value = ctx.resolveOperand(opts.get("number"));
+		if (opt_value instanceof RuntimeString) {
+			if (opt_value.value === "one" || opt_value.value === "other") {
+				resolved_opts.grammatical_number = opt_value.value;
+			}
 		}
 	}
 
-	return new RuntimeString(value);
+	let arg_value = ctx.resolveOperand(arg);
+	if (arg_value instanceof RuntimeTerm) {
+		let term = arg_value.get_term(ctx);
+		return new EnglishNoun(term, resolved_opts);
+	}
+	throw new TypeError();
+}
+
+interface PolishNounOptions {
+	// https://unicode.org/reports/tr35/tr35-general.html#Case
+	// Omit dative, instrumental, locative, and vocative for the sake of the example.
+	grammatical_case: "nominative" | "genitive" | "accusative";
+	grammatical_number: "one" | "few" | "many";
+}
+
+export class PolishNoun implements RuntimeValue {
+	canonical: string;
+	gender: string;
+	values: Term;
+	opts: PolishNounOptions;
+
+	constructor(term: Term, opts: Partial<PolishNounOptions> = {}) {
+		this.canonical = term.canonical;
+		this.gender = term.gender;
+		this.values = {...term};
+		this.opts = {
+			grammatical_case: "nominative",
+			grammatical_number: "one",
+			...opts,
+		};
+	}
+
+	static from(other: PolishNoun, extend_opts?: PolishNounOptions) {
+		return new this(other.values, {
+			...other.opts,
+			...extend_opts,
+		});
+	}
+
+	formatToString(ctx: FormattingContext) {
+		let key = this.opts.grammatical_number + "_" + this.opts.grammatical_case;
+		return this.values[key] ?? this.canonical;
+	}
+
+	*formatToParts(ctx: FormattingContext) {
+		yield {
+			type: "noun",
+			value: this.formatToString(ctx),
+			grammatical_case: this.opts.grammatical_case,
+			grammatical_number: this.opts.grammatical_number,
+		};
+	}
+
+	match(ctx: FormattingContext, key: ast.Literal) {
+		return false;
+	}
+}
+
+function format_noun_pl(ctx: FormattingContext, arg: ast.Operand, opts: ast.Options): Formattable {
+	let resolved_opts: Partial<PolishNounOptions> = {};
+	if (opts.has("case")) {
+		let opt_value = ctx.resolveOperand(opts.get("case"));
+		if (opt_value instanceof RuntimeString) {
+			if (
+				opt_value.value === "nominative" ||
+				opt_value.value === "genitive" ||
+				opt_value.value === "accusative"
+			) {
+				resolved_opts.grammatical_case = opt_value.value;
+			}
+		}
+	}
+	if (opts.has("number")) {
+		let opt_value = ctx.resolveOperand(opts.get("number"));
+		if (opt_value instanceof RuntimeString) {
+			if (opt_value.value === "one" || opt_value.value === "few" || opt_value.value === "many") {
+				resolved_opts.grammatical_number = opt_value.value;
+			}
+		} else if (opt_value instanceof RuntimeNumber) {
+			let pr = new Intl.PluralRules(ctx.locale, {
+				minimumIntegerDigits: opt_value.opts.minimumIntegerDigits,
+				minimumFractionDigits: opt_value.opts.minimumFractionDigits,
+				maximumFractionDigits: opt_value.opts.maximumFractionDigits,
+				minimumSignificantDigits: opt_value.opts.minimumSignificantDigits,
+				maximumSignificantDigits: opt_value.opts.maximumSignificantDigits,
+				...resolved_opts,
+			});
+			let rule = pr.select(opt_value.value);
+			if (rule === "one" || rule === "few" || rule === "many") {
+				resolved_opts.grammatical_number = rule;
+			}
+		}
+	}
+
+	let arg_value = ctx.resolveOperand(arg);
+	if (arg_value instanceof RuntimeTerm) {
+		let term = arg_value.get_term(ctx);
+		return new PolishNoun(term, resolved_opts);
+	}
+	throw new TypeError();
+}
+
+export class NounGenderMatcher implements Matchable {
+	gender?: string;
+
+	constructor(gender?: string) {
+		this.gender = gender;
+	}
+
+	match(ctx: FormattingContext, key: ast.Literal) {
+		switch (ctx.locale) {
+			case "pl":
+				return this.gender === key.value;
+			case "en":
+			default:
+				return false;
+		}
+	}
+}
+
+export function match_noun_gender(ctx: FormattingContext, arg: ast.Operand | null, opts: ast.Options): Matchable {
+	if (arg === null) {
+		throw new TypeError();
+	}
+
+	let arg_value = ctx.resolveOperand(arg);
+	if (arg_value instanceof EnglishNoun) {
+		return new NounGenderMatcher(undefined);
+	}
+	if (arg_value instanceof PolishNoun) {
+		return new NounGenderMatcher(arg_value.gender);
+	}
+	if (arg_value instanceof RuntimeTerm) {
+		let term = arg_value.get_term(ctx);
+		switch (ctx.locale) {
+			case "pl":
+				let noun = new PolishNoun(term);
+				return new NounGenderMatcher(noun.gender);
+			case "en":
+			default:
+				return new NounGenderMatcher(undefined);
+		}
+	}
+	throw new TypeError();
 }

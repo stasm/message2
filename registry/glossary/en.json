@@ -1,0 +1,12 @@
+{
+  "jacket": {
+    "canonical": "jacket",
+    "one_nominative": "jacket",
+    "one_genitive": "jacket's",
+    "other_nominative": "jackets",
+    "other_genitive": "jackets'"
+  },
+  "red": {
+    "canonical": "red"
+  }
+}
