@@ -95,23 +95,23 @@ I'm still working on the implementation of `MessageFormat`. Currently, the follo
 
 The registry contains implementations of formatting and matching functions. All functions available in `message2` are registered functions, even `:number` and `:plural`. The goal is to ensure that registered functions can be as powerful and expressive as necessary. Some modules in the registry also provide custom runtime types. For instance, [`registry/number.ts`](registry/number.ts) provides `RuntimeNumber` which formats numbers and matches them by value; [`registry/plural.ts`](registry/plural.ts) provides `RuntimePlural` which matches numbers by value and by LDML plural category.
 
-The only type built into the runtime rather than the registry is the [`RuntimeString`](runtime/RuntimeString.js), which is the runtime representation of `ast.Literal`.
+The only type built into the runtime rather than the registry is the [`RuntimeString`](runtime/RuntimeString.ts), which is the runtime representation of `ast.Literal`.
 
 ## Examples
 
-* `example/example_string.ts` is a simple example showing how to interpolate string data (`$userName`) into a pattern.
+* [`example/string_argument.ts`](example/string_argument.ts) is a simple example showing how to interpolate string data (`$userName`) into a pattern.
 
-* `example/example_number.ts` showcases locale-aware number and unit formatting for English and French, using [`registry/number.ts`](registry/number.ts).
+* [`example/number_formatting.ts`](example/number_formatting.ts) showcases locale-aware number and unit formatting for English and French, using [`registry/number.ts`](registry/number.ts).
 
-* `example/example_plural.ts` showcases plural selection using [`registry/plural.ts`](registry/plural.ts), as well as a message with two selectors: `$photoCount` and `$userGender`.
+* [`example/plural_selection.ts`](example/plural_selection.ts) showcases plural selection using [`registry/plural.ts`](registry/plural.ts), as well as a message with two selectors: `$photoCount` and `$userGender`.
 
-* `example/example_apples.ts` demonstrates how the plural selector can inspect a number's `minimumFractionDigits` formatting option to select the variant matching the number's formatting.
+* [`example/plural_formatting.ts`](example/plural_formatting.ts) demonstrates how the plural selector can inspect a number's `minimumFractionDigits` formatting option to select the variant matching the number's formatting.
 
-* `example/example_accord.ts` features two fairly complex formatters for grammatical features: [`registry/noun.ts`](registry/noun.ts) and [`registry/adjective.ts`](registry/adjective.ts). They are used in Polish to accord an adjective's grammatical gender, case, and number with the object of the sentence. The object is represented as an instance of `PolishNoun`. The adjective is represented as an instance of `PolishAdjective`, and can inspect the grammatical properties of the object. Both implement the `RuntimeValue` interface.
+* [`example/grammatical_agreement.ts`](example/grammatical_agreement.ts) features two fairly complex formatters for grammatical features: [`registry/noun.ts`](registry/noun.ts) and [`registry/adjective.ts`](registry/adjective.ts). They are used in Polish to accord an adjective's grammatical gender, case, and number with the object of the sentence. The object is represented as an instance of `PolishNoun`. The adjective is represented as an instance of `PolishAdjective`, and can inspect the grammatical properties of the object. Both implement the `RuntimeValue` interface.
 
-* `example/example_list.ts` is an exploration into list formatting and plural selection based on the list's length: [`registry/list.ts`](registry/list.ts). It defines the custom `RuntimeList` value class, which can store and format an array of other runtime values. This example also introduces the custom `Person` value class in [`registry/person.ts`](registry/person.ts), along with two custom functions for formatting `Person` instances: `:person` which formats a single `Person`, and `:person.each` which accepts a *list* of `Person` instances and applies the `:person` function to each of them. I'll admit this is a bit cursed, but I wanted to attempt doing something complex in custom functions without adding too much complexity to the message itself.
+* [`example/list_formatting.ts`](example/list_formatting.ts) is an exploration into list formatting and plural selection based on the list's length: [`registry/list.ts`](registry/list.ts). It defines the custom `RuntimeList` value class, which can store and format an array of other runtime values. This example also introduces the custom `Person` value class in [`registry/person.ts`](registry/person.ts), along with two custom functions for formatting `Person` instances: `:person` which formats a single `Person`, and `:person.each` which accepts a *list* of `Person` instances and applies the `:person` function to each of them. I'll admit this is a bit cursed, but I wanted to attempt doing something complex in custom functions without adding too much complexity to the message itself.
 
-* `example/example_opaque.ts` takes advantage of the `formatToParts()` iterator which yields formatted pattern parts with metadata to pass an opaque unstringifiable value into a message and position it in the sentence.
+* [`example/opaque_argument.ts`](example/opaque_argument.ts) takes advantage of the `formatToParts()` iterator which yields formatted pattern parts with metadata to pass an opaque unstringifiable value into a message and position it in the sentence.
 
 You can run all examples at once with:
 

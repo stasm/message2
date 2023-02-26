@@ -12,7 +12,7 @@
   },
   "scripts": {
     "clean": "find . -type d -name node_modules -prune -o \\( -name '*.js' -o -name '*.js.map' \\) -exec rm {} +",
-    "test": "tsc && tap example/example_*.js"
+    "test": "tsc && tap example/*.js"
   },
   "author": "Stanisław Małolepszy <sta@malolepszy.org>",
   "license": "ISC"
