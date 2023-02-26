@@ -89,13 +89,14 @@ test("Plural selection (English: * wins)", (tap) => {
 test("Multiple selection (English)", (tap) => {
 	let message = new MessageFormat(
 		"en-US",
-		`match {$photoCount :plural} {$userGender :equals}
-		 when one masculine {{$userName} added a new photo to his album.}
-		 when one feminine {{$userName} added a new photo to her album.}
-		 when one * {{$userName} added a new photo to their album.}
-		 when * masculine {{$userName} added {$photoCount} new photos to his album.}
-		 when * feminine {{$userName} added {$photoCount} new photos to her album.}
-		 when * * {{$userName} added {$photoCount} new photos to their album.}`
+		`
+		match {$photoCount :plural} {$userGender :equals}
+		when one masculine {{$userName} added a new photo to his album.}
+		when one feminine {{$userName} added a new photo to her album.}
+		when one * {{$userName} added a new photo to their album.}
+		when * masculine {{$userName} added {$photoCount} new photos to his album.}
+		when * feminine {{$userName} added {$photoCount} new photos to her album.}
+		when * * {{$userName} added {$photoCount} new photos to their album.}`
 	);
 	tap.equal(
 		message.format({
