@@ -47,28 +47,27 @@ export class RuntimePlural implements RuntimeValue {
 	}
 }
 
-export function match_plural(ctx: FormattingContext, arg: ast.Operand | null, opts: ast.Options): RuntimeValue {
-	if (arg === null) {
-		throw new TypeError();
-	}
-
-	let resolved_opts: Intl.PluralRulesOptions = {};
+export function match_plural(
+	ctx: FormattingContext,
+	arg: RuntimeValue | null,
+	opts: Map<string, RuntimeValue>
+): RuntimeValue {
+	let explicit_opts: Intl.PluralRulesOptions = {};
 	if (opts.has("type")) {
-		let type_value = ctx.resolveOperand(opts.get("type"));
+		let type_value = opts.get("type");
 		if (type_value instanceof RuntimeString) {
 			// TODO(stasm): Validate type value.
-			resolved_opts.type = type_value.value as Intl.PluralRuleType;
+			explicit_opts.type = type_value.value as Intl.PluralRuleType;
 		}
 		// TODO(stasm): Handle other types.
 	}
 
-	let arg_value = ctx.resolveOperand(arg);
-	if (arg_value instanceof RuntimeNumber) {
-		return RuntimePlural.fromNumber(arg_value, resolved_opts);
+	if (arg instanceof RuntimeNumber) {
+		return RuntimePlural.fromNumber(arg, explicit_opts);
 	}
-	if (arg_value instanceof RuntimeString) {
-		let num_value = parseFloat(arg_value.value);
-		return new RuntimePlural(num_value, resolved_opts);
+	if (arg instanceof RuntimeString) {
+		let num_value = parseFloat(arg.value);
+		return new RuntimePlural(num_value, explicit_opts);
 	}
 	throw new TypeError();
 }

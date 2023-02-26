@@ -31,62 +31,61 @@ export class RuntimeNumber implements RuntimeValue {
 	}
 }
 
-export function format_number(ctx: FormattingContext, arg: ast.Operand | null, opts: ast.Options): RuntimeNumber {
-	if (arg === null) {
-		throw new TypeError();
-	}
-
-	let resolved_opts: Intl.NumberFormatOptions = {};
+export function format_number(
+	ctx: FormattingContext,
+	arg: RuntimeValue | null,
+	opts: Map<string, RuntimeValue>
+): RuntimeNumber {
+	let explicit_opts: Intl.NumberFormatOptions = {};
 	if (opts.has("style")) {
-		let value = ctx.resolveOperand(opts.get("style"));
+		let value = opts.get("style");
 		if (value instanceof RuntimeString) {
-			resolved_opts.style = value.value;
+			explicit_opts.style = value.value;
 		}
 	}
 	if (opts.has("unit")) {
-		let value = ctx.resolveOperand(opts.get("unit"));
+		let value = opts.get("unit");
 		if (value instanceof RuntimeString) {
-			resolved_opts.unit = value.value;
+			explicit_opts.unit = value.value;
 		}
 	}
 	if (opts.has("minimumIntegerDigits")) {
-		let value = ctx.resolveOperand(opts.get("minimumIntegerDigits"));
+		let value = opts.get("minimumIntegerDigits");
 		if (value instanceof RuntimeString) {
-			resolved_opts.minimumIntegerDigits = parseInt(value.value);
+			explicit_opts.minimumIntegerDigits = parseInt(value.value);
 		}
 	}
 	if (opts.has("minimumFractionDigits")) {
-		let value = ctx.resolveOperand(opts.get("minimumFractionDigits"));
+		let value = opts.get("minimumFractionDigits");
 		if (value instanceof RuntimeString) {
-			resolved_opts.minimumFractionDigits = parseInt(value.value);
+			explicit_opts.minimumFractionDigits = parseInt(value.value);
 		}
 	}
 	if (opts.has("maximumFractionDigits")) {
-		let value = ctx.resolveOperand(opts.get("maximumFractionDigits"));
+		let value = opts.get("maximumFractionDigits");
 		if (value instanceof RuntimeString) {
-			resolved_opts.maximumFractionDigits = parseInt(value.value);
+			explicit_opts.maximumFractionDigits = parseInt(value.value);
 		}
 	}
 	if (opts.has("minimumSignificantDigits")) {
-		let value = ctx.resolveOperand(opts.get("minimumSignificantDigits"));
+		let value = opts.get("minimumSignificantDigits");
 		if (value instanceof RuntimeString) {
-			resolved_opts.minimumSignificantDigits = parseInt(value.value);
+			explicit_opts.minimumSignificantDigits = parseInt(value.value);
 		}
 	}
 	if (opts.has("maximumSignificantDigits")) {
-		let value = ctx.resolveOperand(opts.get("maximumSignificantDigits"));
+		let value = opts.get("maximumSignificantDigits");
 		if (value instanceof RuntimeString) {
-			resolved_opts.maximumSignificantDigits = parseInt(value.value);
+			explicit_opts.maximumSignificantDigits = parseInt(value.value);
 		}
 	}
 
-	let arg_value = ctx.resolveOperand(arg);
-	if (arg_value instanceof RuntimeNumber) {
-		return RuntimeNumber.from(arg_value, resolved_opts);
+	if (arg instanceof RuntimeNumber) {
+		return RuntimeNumber.from(arg, explicit_opts);
 	}
-	if (arg_value instanceof RuntimeString) {
-		let raw_value = parseFloat(arg_value.value);
-		return new RuntimeNumber(raw_value, resolved_opts);
+	if (arg instanceof RuntimeString) {
+		let raw_value = parseFloat(arg.value);
+		return new RuntimeNumber(raw_value, explicit_opts);
 	}
 	throw new TypeError();
 }

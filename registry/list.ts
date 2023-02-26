@@ -34,46 +34,45 @@ export class RuntimeList implements RuntimeValue {
 	}
 }
 
-export function match_length(ctx: FormattingContext, arg: ast.Operand | null, opts: ast.Options): RuntimeValue {
-	if (arg === null) {
-		throw new TypeError();
-	}
-	let elements = ctx.resolveOperand(arg);
-	if (elements instanceof RuntimeList) {
-		return new RuntimePlural(elements.value.length);
+export function match_length(
+	ctx: FormattingContext,
+	arg: RuntimeValue | null,
+	opts: Map<string, RuntimeValue>
+): RuntimeValue {
+	if (arg instanceof RuntimeList) {
+		return new RuntimePlural(arg.value.length);
 	}
 	throw new TypeError();
 }
 
-export function format_list(ctx: FormattingContext, arg: ast.Operand | null, opts: ast.Options): RuntimeList {
-	if (arg === null) {
-		throw new TypeError();
-	}
-
-	let resolved_opts: Intl.ListFormatOptions = {};
+export function format_list(
+	ctx: FormattingContext,
+	arg: RuntimeValue | null,
+	opts: Map<string, RuntimeValue>
+): RuntimeList {
+	let explicit_opts: Intl.ListFormatOptions = {};
 	if (opts.has("style")) {
-		let value = ctx.resolveOperand(opts.get("style"));
+		let value = opts.get("style");
 		if (value instanceof RuntimeString) {
 			if (value.value === "long" || value.value === "short" || value.value === "narrow") {
-				resolved_opts.style = value.value;
+				explicit_opts.style = value.value;
 			}
 		}
 	}
 	if (opts.has("type")) {
-		let value = ctx.resolveOperand(opts.get("type"));
+		let value = opts.get("type");
 		if (value instanceof RuntimeString) {
 			if (value.value === "conjunction" || value.value === "disjunction" || value.value === "unit") {
-				resolved_opts.type = value.value;
+				explicit_opts.type = value.value;
 			}
 		}
 	}
 
-	let arg_value = ctx.resolveOperand(arg);
-	if (arg_value instanceof RuntimeList) {
-		return RuntimeList.from(arg_value, resolved_opts);
+	if (arg instanceof RuntimeList) {
+		return RuntimeList.from(arg, explicit_opts);
 	}
-	if (arg_value instanceof RuntimeString) {
-		return new RuntimeList([arg_value], resolved_opts);
+	if (arg instanceof RuntimeString) {
+		return new RuntimeList([arg], explicit_opts);
 	}
 	throw new TypeError();
 }

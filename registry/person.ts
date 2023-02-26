@@ -77,58 +77,56 @@ export class Person implements RuntimeValue {
 	}
 }
 
-export function format_person(ctx: FormattingContext, arg: ast.Operand | null, opts: ast.Options): Person {
-	if (arg === null) {
-		throw new TypeError();
-	}
-
-	let arg_value = ctx.resolveOperand(arg);
-	if (arg_value instanceof Person) {
-		return apply_person(ctx, arg_value, opts);
+export function format_person(
+	ctx: FormattingContext,
+	arg: RuntimeValue | null,
+	opts: Map<string, RuntimeValue>
+): Person {
+	if (arg instanceof Person) {
+		return apply_person(ctx, arg, opts);
 	}
 	throw new TypeError();
 }
 
-export function map_person(ctx: FormattingContext, arg: ast.Operand | null, opts: ast.Options): RuntimeList {
-	if (arg === null) {
-		throw new TypeError();
-	}
-
-	let arg_value = ctx.resolveOperand(arg);
-	if (arg_value instanceof RuntimeList) {
+export function map_person(
+	ctx: FormattingContext,
+	arg: RuntimeValue | null,
+	opts: Map<string, RuntimeValue>
+): RuntimeList {
+	if (arg instanceof RuntimeList) {
 		let person_values: Array<Person> = [];
-		for (let element of arg_value.value) {
+		for (let element of arg.value) {
 			if (element instanceof Person) {
 				person_values.push(apply_person(ctx, element, opts));
 			}
 		}
-		return new RuntimeList(person_values, arg_value.opts);
+		return new RuntimeList(person_values, arg.opts);
 	}
 	throw new TypeError();
 }
 
-export function apply_person(ctx: FormattingContext, value: Person, opts: ast.Options): Person {
+export function apply_person(ctx: FormattingContext, value: Person, opts: Map<string, RuntimeValue>): Person {
 	if (ctx.locale !== "ro") {
 		throw new Error("Only Romanian is supported");
 	}
 
-	let resolved_opts: PersonFormatOptions = {};
+	let explicit_opts: PersonFormatOptions = {};
 	if (opts.has("name")) {
-		let optval = ctx.resolveOperand(opts.get("name"));
+		let optval = opts.get("name");
 		if (optval instanceof RuntimeString) {
 			if (optval.value === "first" || optval.value === "last" || optval.value === "full") {
-				resolved_opts.name = optval.value;
+				explicit_opts.name = optval.value;
 			}
 		}
 	}
 	if (opts.has("declension")) {
-		let optval = ctx.resolveOperand(opts.get("declension"));
+		let optval = opts.get("declension");
 		if (optval instanceof RuntimeString) {
 			if (optval.value === "nominative" || optval.value === "dative") {
-				resolved_opts.declension = optval.value;
+				explicit_opts.declension = optval.value;
 			}
 		}
 	}
 
-	return Person.from(value, resolved_opts);
+	return Person.from(value, explicit_opts);
 }

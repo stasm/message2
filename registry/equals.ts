@@ -1,13 +1,15 @@
 import {FormattingContext, RuntimeString, RuntimeValue} from "../runtime/index.js";
-import * as ast from "../syntax/ast.js";
 
-export function match_equals(ctx: FormattingContext, arg: ast.Operand | null, opts: ast.Options): RuntimeValue {
+export function match_equals(
+	ctx: FormattingContext,
+	arg: RuntimeValue | null,
+	opts: Map<string, RuntimeValue>
+): RuntimeValue {
 	if (arg === null) {
 		throw new TypeError();
 	}
-	let value = ctx.resolveOperand(arg);
-	if (value instanceof RuntimeString) {
-		return value;
+	if (arg instanceof RuntimeString) {
+		return arg;
 	}
 	throw new TypeError();
 }

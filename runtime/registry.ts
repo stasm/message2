@@ -1,9 +1,8 @@
-import * as ast from "../syntax/ast.js";
 import {FormattingContext} from "./FormattingContext.js";
 import {RuntimeValue} from "./RuntimeValue.js";
 
 export interface CustomFunction {
-	(ctx: FormattingContext, arg: ast.Operand | null, opts: ast.Options): RuntimeValue;
+	(ctx: FormattingContext, arg: RuntimeValue | null, opts: Map<string, RuntimeValue>): RuntimeValue;
 }
 
 export class Registry {

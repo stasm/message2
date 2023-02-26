@@ -62,7 +62,7 @@ export class FormattingContext {
 		}
 	}
 
-	resolveOperand(node: ast.Operand | undefined): RuntimeValue {
+	#resolveOperand(node: ast.Operand | undefined): RuntimeValue {
 		if (node instanceof ast.Literal) {
 			return new RuntimeString(node.value);
 		}
@@ -73,15 +73,28 @@ export class FormattingContext {
 		throw new TypeError("Invalid node type.");
 	}
 
+	#resolveOptions(opts: ast.Options): Map<string, RuntimeValue> {
+		let resolved_opts = new Map();
+		for (let [key, value] of opts) {
+			resolved_opts.set(key, this.#resolveOperand(value));
+		}
+		return resolved_opts;
+	}
+
 	#resolveExpression(expr: ast.Expression) {
 		if (expr instanceof ast.FunctionExpression) {
 			let func = Registry.getFunction(expr.name);
-			return func(this, null, expr.opts);
+			// Eagerly resolve all options.
+			let opts = this.#resolveOptions(expr.opts);
+			return func(this, null, opts);
 		}
 		if (expr.func) {
 			let func = Registry.getFunction(expr.func.name);
-			return func(this, expr.arg, expr.func.opts);
+			// Eagerly resolve the argument and all options.
+			let arg = this.#resolveOperand(expr.arg);
+			let opts = this.#resolveOptions(expr.func.opts);
+			return func(this, arg, opts);
 		}
-		return this.resolveOperand(expr.arg);
+		return this.#resolveOperand(expr.arg);
 	}
 }

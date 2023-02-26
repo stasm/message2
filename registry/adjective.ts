@@ -3,11 +3,11 @@ import * as ast from "../syntax/ast.js";
 import {PolishNoun} from "./noun.js";
 import {RuntimeTerm, Term} from "./term.js";
 
-export function format_adjective(ctx: FormattingContext, arg: ast.Operand | null, opts: ast.Options): RuntimeValue {
-	if (arg === null) {
-		throw new TypeError();
-	}
-
+export function format_adjective(
+	ctx: FormattingContext,
+	arg: RuntimeValue | null,
+	opts: Map<string, RuntimeValue>
+): RuntimeValue {
 	switch (ctx.locale) {
 		case "en":
 			return format_adjective_en(ctx, arg, opts);
@@ -47,10 +47,16 @@ export class EnglishAdjective implements RuntimeValue {
 	}
 }
 
-function format_adjective_en(ctx: FormattingContext, arg: ast.Operand, opts: ast.Options): RuntimeValue {
-	let arg_value = ctx.resolveOperand(arg);
-	if (arg_value instanceof RuntimeTerm) {
-		let term = arg_value.get_term(ctx);
+function format_adjective_en(
+	ctx: FormattingContext,
+	arg: RuntimeValue | null,
+	opts: Map<string, RuntimeValue>
+): RuntimeValue {
+	if (arg instanceof EnglishAdjective) {
+		return EnglishAdjective.from(arg);
+	}
+	if (arg instanceof RuntimeTerm) {
+		let term = arg.get_term(ctx);
 		return new EnglishAdjective(term);
 	}
 	throw new TypeError();
@@ -77,7 +83,7 @@ export class PolishAdjective implements RuntimeValue {
 		};
 	}
 
-	static from(other: PolishNoun, extend_opts?: Partial<PolishAdjectiveOptions>) {
+	static from(other: PolishAdjective, extend_opts?: Partial<PolishAdjectiveOptions>) {
 		return new this(other.values, {
 			...other.opts,
 			...extend_opts,
@@ -123,22 +129,28 @@ export class PolishAdjective implements RuntimeValue {
 	}
 }
 
-function format_adjective_pl(ctx: FormattingContext, arg: ast.Operand, opts: ast.Options): RuntimeValue {
-	let resolved_opts: Partial<PolishAdjectiveOptions> = {};
+function format_adjective_pl(
+	ctx: FormattingContext,
+	arg: RuntimeValue | null,
+	opts: Map<string, RuntimeValue>
+): RuntimeValue {
+	let explicit_opts: Partial<PolishAdjectiveOptions> = {};
 	if (opts.has("accord")) {
-		let opt_value = ctx.resolveOperand(opts.get("accord"));
+		let opt_value = opts.get("accord");
 		if (opt_value instanceof PolishNoun) {
-			resolved_opts.accord = opt_value;
+			explicit_opts.accord = opt_value;
 		} else if (opt_value instanceof RuntimeTerm) {
 			let term = opt_value.get_term(ctx);
-			resolved_opts.accord = new PolishNoun(term);
+			explicit_opts.accord = new PolishNoun(term);
 		}
 	}
 
-	let arg_value = ctx.resolveOperand(arg);
-	if (arg_value instanceof RuntimeTerm) {
-		let term = arg_value.get_term(ctx);
-		return new PolishAdjective(term, resolved_opts);
+	if (arg instanceof PolishAdjective) {
+		return PolishAdjective.from(arg, explicit_opts);
+	}
+	if (arg instanceof RuntimeTerm) {
+		let term = arg.get_term(ctx);
+		return new PolishAdjective(term, explicit_opts);
 	}
 	throw new TypeError();
 }
