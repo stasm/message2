@@ -1,8 +1,8 @@
-import {FormattingContext} from "./FormattingContext.js";
+import {FormatContext} from "./FormatContext.js";
 import {RuntimeValue} from "./RuntimeValue.js";
 
 export interface CustomFunction {
-	(ctx: FormattingContext, arg: RuntimeValue | null, opts: Map<string, RuntimeValue>): RuntimeValue;
+	(ctx: FormatContext, arg: RuntimeValue | null, opts: Map<string, RuntimeValue>): RuntimeValue;
 }
 
 export class Registry {

@@ -1,4 +1,4 @@
-import {FormattingContext, RuntimeString, RuntimeValue} from "../runtime/index.js";
+import {FormatContext, RuntimeString, RuntimeValue} from "../runtime/index.js";
 import * as ast from "../syntax/ast.js";
 
 export class RuntimeNumber implements RuntimeValue {
@@ -17,22 +17,22 @@ export class RuntimeNumber implements RuntimeValue {
 		});
 	}
 
-	formatToString(ctx: FormattingContext) {
+	formatToString(ctx: FormatContext) {
 		// TODO(stasm): Cache NumberFormat.
 		return new Intl.NumberFormat(ctx.locale, this.opts).format(this.value);
 	}
 
-	*formatToParts(ctx: FormattingContext) {
+	*formatToParts(ctx: FormatContext) {
 		yield* new Intl.NumberFormat(ctx.locale, this.opts).formatToParts(this.value);
 	}
 
-	match(ctx: FormattingContext, key: ast.Literal) {
+	match(ctx: FormatContext, key: ast.Literal) {
 		return this.value === parseFloat(key.value);
 	}
 }
 
 export function format_number(
-	ctx: FormattingContext,
+	ctx: FormatContext,
 	arg: RuntimeValue | null,
 	opts: Map<string, RuntimeValue>
 ): RuntimeNumber {

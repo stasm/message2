@@ -1,5 +1,5 @@
 import {test} from "tap";
-import {FormattingContext, MessageFormat, RuntimeValue} from "../runtime/index.js";
+import {FormatContext, MessageFormat, RuntimeValue} from "../runtime/index.js";
 import * as ast from "../syntax/ast.js";
 
 // We want to pass it into the translation and get it back out unformatted, in
@@ -14,15 +14,15 @@ class WrappedValue implements RuntimeValue {
 		this.value = value;
 	}
 
-	formatToString(ctx: FormattingContext): string {
+	formatToString(ctx: FormatContext): string {
 		return this.label;
 	}
 
-	*formatToParts(ctx: FormattingContext) {
+	*formatToParts(ctx: FormatContext) {
 		yield {type: "opaque", value: this.label, instance: this.value};
 	}
 
-	match(ctx: FormattingContext, key: ast.Literal) {
+	match(ctx: FormatContext, key: ast.Literal) {
 		return false;
 	}
 }

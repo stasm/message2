@@ -3,9 +3,7 @@ import {Registry} from "./registry.js";
 import {RuntimeString} from "./RuntimeString.js";
 import {RuntimeValue} from "./RuntimeValue.js";
 
-// Resolution context for a single formatMessage() call.
-
-export class FormattingContext {
+export class FormatContext {
 	locale: string;
 	vars: Record<string, RuntimeValue>;
 	lets: Map<string, RuntimeValue> = new Map();

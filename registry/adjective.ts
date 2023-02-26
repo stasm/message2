@@ -1,10 +1,10 @@
-import {FormattingContext, RuntimeValue} from "../runtime/index.js";
+import {FormatContext, RuntimeValue} from "../runtime/index.js";
 import * as ast from "../syntax/ast.js";
 import {PolishNoun} from "./noun.js";
 import {RuntimeTerm, Term} from "./term.js";
 
 export function format_adjective(
-	ctx: FormattingContext,
+	ctx: FormatContext,
 	arg: RuntimeValue | null,
 	opts: Map<string, RuntimeValue>
 ): RuntimeValue {
@@ -31,24 +31,24 @@ export class EnglishAdjective implements RuntimeValue {
 		return new this(other.values);
 	}
 
-	formatToString(ctx: FormattingContext) {
+	formatToString(ctx: FormatContext) {
 		return this.canonical;
 	}
 
-	*formatToParts(ctx: FormattingContext) {
+	*formatToParts(ctx: FormatContext) {
 		yield {
 			type: "adjective",
 			value: this.formatToString(ctx),
 		};
 	}
 
-	match(ctx: FormattingContext, key: ast.Literal) {
+	match(ctx: FormatContext, key: ast.Literal) {
 		return false;
 	}
 }
 
 function format_adjective_en(
-	ctx: FormattingContext,
+	ctx: FormatContext,
 	arg: RuntimeValue | null,
 	opts: Map<string, RuntimeValue>
 ): RuntimeValue {
@@ -90,7 +90,7 @@ export class PolishAdjective implements RuntimeValue {
 		});
 	}
 
-	formatToString(ctx: FormattingContext) {
+	formatToString(ctx: FormatContext) {
 		if (this.opts.accord) {
 			let accord_gender = this.opts.accord.gender ?? "inanimate";
 			let accord_number = this.opts.accord.opts.grammatical_number;
@@ -101,7 +101,7 @@ export class PolishAdjective implements RuntimeValue {
 		return this.canonical;
 	}
 
-	*formatToParts(ctx: FormattingContext) {
+	*formatToParts(ctx: FormatContext) {
 		let grammatical_gender: string;
 		let grammatical_case: string;
 		let grammatical_number: string;
@@ -124,13 +124,13 @@ export class PolishAdjective implements RuntimeValue {
 		};
 	}
 
-	match(ctx: FormattingContext, key: ast.Literal) {
+	match(ctx: FormatContext, key: ast.Literal) {
 		return false;
 	}
 }
 
 function format_adjective_pl(
-	ctx: FormattingContext,
+	ctx: FormatContext,
 	arg: RuntimeValue | null,
 	opts: Map<string, RuntimeValue>
 ): RuntimeValue {

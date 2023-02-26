@@ -1,4 +1,4 @@
-import {FormattingContext, RuntimeString, RuntimeValue} from "../runtime/index.js";
+import {FormatContext, RuntimeString, RuntimeValue} from "../runtime/index.js";
 import * as ast from "../syntax/ast.js";
 import {RuntimeNumber} from "./number.js";
 
@@ -29,15 +29,15 @@ export class RuntimePlural implements RuntimeValue {
 		});
 	}
 
-	formatToString(ctx: FormattingContext): string {
+	formatToString(ctx: FormatContext): string {
 		throw new EvalError("Cannot use :plural for formatting.");
 	}
 
-	*formatToParts(ctx: FormattingContext) {
+	*formatToParts(ctx: FormatContext) {
 		throw new EvalError("Cannot use :plural for formatting.");
 	}
 
-	match(ctx: FormattingContext, key: ast.Literal) {
+	match(ctx: FormatContext, key: ast.Literal) {
 		// Attempt an exact match on the numerical value first.
 		if (this.value === parseFloat(key.value)) {
 			return true;
@@ -48,7 +48,7 @@ export class RuntimePlural implements RuntimeValue {
 }
 
 export function match_plural(
-	ctx: FormattingContext,
+	ctx: FormatContext,
 	arg: RuntimeValue | null,
 	opts: Map<string, RuntimeValue>
 ): RuntimeValue {

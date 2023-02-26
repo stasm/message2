@@ -1,5 +1,5 @@
 import * as ast from "../syntax/ast.js";
-import {FormattingContext} from "./FormattingContext.js";
+import {FormatContext} from "./FormatContext.js";
 import {RuntimeValue} from "./RuntimeValue.js";
 
 export class RuntimeString implements RuntimeValue {
@@ -13,15 +13,15 @@ export class RuntimeString implements RuntimeValue {
 		return new this(other.value);
 	}
 
-	formatToString(ctx: FormattingContext) {
+	formatToString(ctx: FormatContext) {
 		return this.value;
 	}
 
-	*formatToParts(ctx: FormattingContext) {
+	*formatToParts(ctx: FormatContext) {
 		yield {type: "literal", value: this.value};
 	}
 
-	match(ctx: FormattingContext, key: ast.Literal) {
+	match(ctx: FormatContext, key: ast.Literal) {
 		return this.value === key.value;
 	}
 }

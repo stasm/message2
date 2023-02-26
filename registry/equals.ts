@@ -1,7 +1,7 @@
-import {FormattingContext, RuntimeString, RuntimeValue} from "../runtime/index.js";
+import {FormatContext, RuntimeString, RuntimeValue} from "../runtime/index.js";
 
 export function match_equals(
-	ctx: FormattingContext,
+	ctx: FormatContext,
 	arg: RuntimeValue | null,
 	opts: Map<string, RuntimeValue>
 ): RuntimeValue {

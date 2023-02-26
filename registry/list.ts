@@ -1,4 +1,4 @@
-import {FormattingContext, RuntimeString, RuntimeValue} from "../runtime/index.js";
+import {FormatContext, RuntimeString, RuntimeValue} from "../runtime/index.js";
 import * as ast from "../syntax/ast.js";
 import {RuntimePlural} from "./plural.js";
 
@@ -18,24 +18,24 @@ export class RuntimeList implements RuntimeValue {
 		});
 	}
 
-	formatToString(ctx: FormattingContext) {
+	formatToString(ctx: FormatContext) {
 		// TODO(stasm): Cache ListFormat.
 		let lf = new Intl.ListFormat(ctx.locale, this.opts);
 		return lf.format(this.value.map((x) => x.formatToString(ctx)));
 	}
 
-	*formatToParts(ctx: FormattingContext) {
+	*formatToParts(ctx: FormatContext) {
 		let lf = new Intl.ListFormat(ctx.locale, this.opts);
 		yield* lf.formatToParts(this.value.map((x) => x.formatToString(ctx)));
 	}
 
-	match(ctx: FormattingContext, key: ast.Literal) {
+	match(ctx: FormatContext, key: ast.Literal) {
 		return false;
 	}
 }
 
 export function match_length(
-	ctx: FormattingContext,
+	ctx: FormatContext,
 	arg: RuntimeValue | null,
 	opts: Map<string, RuntimeValue>
 ): RuntimeValue {
@@ -46,7 +46,7 @@ export function match_length(
 }
 
 export function format_list(
-	ctx: FormattingContext,
+	ctx: FormatContext,
 	arg: RuntimeValue | null,
 	opts: Map<string, RuntimeValue>
 ): RuntimeList {

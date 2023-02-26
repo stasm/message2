@@ -1,6 +1,6 @@
 import * as ast from "../syntax/ast.js";
 import {Parser} from "../syntax/Parser.js";
-import {FormattingContext} from "./FormattingContext.js";
+import {FormatContext} from "./FormatContext.js";
 import {CustomFunction, Registry} from "./registry.js";
 import {RuntimeValue} from "./RuntimeValue.js";
 
@@ -16,7 +16,7 @@ export class MessageFormat {
 	}
 
 	format(vars: Record<string, RuntimeValue>): string {
-		let ctx = new FormattingContext(this.locale, vars, this.ast.declarations);
+		let ctx = new FormatContext(this.locale, vars, this.ast.declarations);
 		let variant = ctx.selectVariant(this.ast.variants, this.ast.selectors);
 		let output = "";
 		for (let value of ctx.resolvePattern(variant.pattern)) {
@@ -26,7 +26,7 @@ export class MessageFormat {
 	}
 
 	*formatToParts(vars: Record<string, RuntimeValue>): IterableIterator<MessagePart> {
-		let ctx = new FormattingContext(this.locale, vars, this.ast.declarations);
+		let ctx = new FormatContext(this.locale, vars, this.ast.declarations);
 		let variant = ctx.selectVariant(this.ast.variants, this.ast.selectors);
 		for (let value of ctx.resolvePattern(variant.pattern)) {
 			yield* value.formatToParts(ctx);

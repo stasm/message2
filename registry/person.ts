@@ -1,4 +1,4 @@
-import {FormattingContext, RuntimeString, RuntimeValue} from "../runtime/index.js";
+import {FormatContext, RuntimeString, RuntimeValue} from "../runtime/index.js";
 import * as ast from "../syntax/ast.js";
 import {RuntimeList} from "./list.js";
 
@@ -25,7 +25,7 @@ export class Person implements RuntimeValue {
 		});
 	}
 
-	formatToString(ctx: FormattingContext) {
+	formatToString(ctx: FormatContext) {
 		switch (this.opts.name) {
 			case "first":
 				return this.#decline(ctx, this.firstName);
@@ -38,7 +38,7 @@ export class Person implements RuntimeValue {
 		}
 	}
 
-	*formatToParts(ctx: FormattingContext) {
+	*formatToParts(ctx: FormatContext) {
 		switch (this.opts.name) {
 			case "first":
 				yield {type: "person_name_first", value: this.#decline(ctx, this.firstName)};
@@ -53,11 +53,11 @@ export class Person implements RuntimeValue {
 		}
 	}
 
-	match(ctx: FormattingContext, key: ast.Literal) {
+	match(ctx: FormatContext, key: ast.Literal) {
 		return false;
 	}
 
-	#decline(ctx: FormattingContext, name: string): string {
+	#decline(ctx: FormatContext, name: string): string {
 		if (this.opts.declension === "dative") {
 			switch (true) {
 				case name.endsWith("ana"):
@@ -77,22 +77,14 @@ export class Person implements RuntimeValue {
 	}
 }
 
-export function format_person(
-	ctx: FormattingContext,
-	arg: RuntimeValue | null,
-	opts: Map<string, RuntimeValue>
-): Person {
+export function format_person(ctx: FormatContext, arg: RuntimeValue | null, opts: Map<string, RuntimeValue>): Person {
 	if (arg instanceof Person) {
 		return apply_person(ctx, arg, opts);
 	}
 	throw new TypeError();
 }
 
-export function map_person(
-	ctx: FormattingContext,
-	arg: RuntimeValue | null,
-	opts: Map<string, RuntimeValue>
-): RuntimeList {
+export function map_person(ctx: FormatContext, arg: RuntimeValue | null, opts: Map<string, RuntimeValue>): RuntimeList {
 	if (arg instanceof RuntimeList) {
 		let person_values: Array<Person> = [];
 		for (let element of arg.value) {
@@ -105,7 +97,7 @@ export function map_person(
 	throw new TypeError();
 }
 
-export function apply_person(ctx: FormattingContext, value: Person, opts: Map<string, RuntimeValue>): Person {
+export function apply_person(ctx: FormatContext, value: Person, opts: Map<string, RuntimeValue>): Person {
 	if (ctx.locale !== "ro") {
 		throw new Error("Only Romanian is supported");
 	}

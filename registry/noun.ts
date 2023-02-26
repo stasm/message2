@@ -1,10 +1,10 @@
-import {FormattingContext, RuntimeString, RuntimeValue} from "../runtime/index.js";
+import {FormatContext, RuntimeString, RuntimeValue} from "../runtime/index.js";
 import * as ast from "../syntax/ast.js";
 import {RuntimeNumber} from "./number.js";
 import {RuntimeTerm, Term} from "./term.js";
 
 export function format_noun(
-	ctx: FormattingContext,
+	ctx: FormatContext,
 	arg: RuntimeValue | null,
 	opts: Map<string, RuntimeValue>
 ): RuntimeValue {
@@ -46,12 +46,12 @@ export class EnglishNoun implements RuntimeValue {
 		});
 	}
 
-	formatToString(ctx: FormattingContext) {
+	formatToString(ctx: FormatContext) {
 		let key = this.opts.grammatical_number + "_" + this.opts.grammatical_case;
 		return this.values[key] ?? this.canonical;
 	}
 
-	*formatToParts(ctx: FormattingContext) {
+	*formatToParts(ctx: FormatContext) {
 		yield {
 			type: "noun",
 			value: this.formatToString(ctx),
@@ -60,16 +60,12 @@ export class EnglishNoun implements RuntimeValue {
 		};
 	}
 
-	match(ctx: FormattingContext, key: ast.Literal) {
+	match(ctx: FormatContext, key: ast.Literal) {
 		return false;
 	}
 }
 
-function format_noun_en(
-	ctx: FormattingContext,
-	arg: RuntimeValue | null,
-	opts: Map<string, RuntimeValue>
-): RuntimeValue {
+function format_noun_en(ctx: FormatContext, arg: RuntimeValue | null, opts: Map<string, RuntimeValue>): RuntimeValue {
 	let explicit_opts: Partial<EnglishNounOptions> = {};
 	if (opts.has("case")) {
 		let opt_value = opts.get("case");
@@ -131,12 +127,12 @@ export class PolishNoun implements RuntimeValue {
 		});
 	}
 
-	formatToString(ctx: FormattingContext) {
+	formatToString(ctx: FormatContext) {
 		let key = this.opts.grammatical_number + "_" + this.opts.grammatical_case;
 		return this.values[key] ?? this.canonical;
 	}
 
-	*formatToParts(ctx: FormattingContext) {
+	*formatToParts(ctx: FormatContext) {
 		yield {
 			type: "noun",
 			value: this.formatToString(ctx),
@@ -145,7 +141,7 @@ export class PolishNoun implements RuntimeValue {
 		};
 	}
 
-	match(ctx: FormattingContext, key: ast.Literal) {
+	match(ctx: FormatContext, key: ast.Literal) {
 		switch (this.opts.inspect_property) {
 			case "gender":
 				return this.gender === key.value;
@@ -155,11 +151,7 @@ export class PolishNoun implements RuntimeValue {
 	}
 }
 
-function format_noun_pl(
-	ctx: FormattingContext,
-	arg: RuntimeValue | null,
-	opts: Map<string, RuntimeValue>
-): RuntimeValue {
+function format_noun_pl(ctx: FormatContext, arg: RuntimeValue | null, opts: Map<string, RuntimeValue>): RuntimeValue {
 	let explicit_opts: Partial<PolishNounOptions> = {};
 	if (opts.has("case")) {
 		let opt_value = opts.get("case");
