@@ -10,10 +10,10 @@ test("Plural selection depends on number formatting (English 1)", (tap) => {
 	let message = new MessageFormat(
 		"en-US",
 		`
-		let $amount = {$count :number minimumFractionDigits=0}
-		match {$amount :plural}
-		when one {You have {$amount} apple.}
-		when * {You have {$amount} apples.}`
+		let $count = {$count :number minimumFractionDigits=0}
+		match {$count :plural}
+		when one {You have {$count} apple.}
+		when * {You have {$count} apples.}`
 	);
 	tap.equal(
 		message.format({
@@ -38,10 +38,10 @@ test("Plural selection depends on number formatting (English 1.0)", (tap) => {
 	let message = new MessageFormat(
 		"en-US",
 		`
-		let $amount = {$count :number minimumFractionDigits=1}
-		match {$amount :plural}
-		when one {You have {$amount} apple.}
-		when * {You have {$amount} apples.}`
+		let $count = {$count :number minimumFractionDigits=1}
+		match {$count :plural}
+		when one {You have {$count} apple.}
+		when * {You have {$count} apples.}`
 	);
 	tap.equal(
 		message.format({
@@ -60,6 +60,31 @@ test("Plural selection depends on number formatting (English 1.0)", (tap) => {
 			{type: "fraction", value: "0"},
 			{type: "literal", value: " apples."},
 		]
+	);
+	tap.end();
+});
+
+test("Plural selection uses an exact numerical match despite number formatting (English 1.0)", (tap) => {
+	let message = new MessageFormat(
+		"en-US",
+		`
+		let $count = {$count :number minimumFractionDigits=1}
+		match {$count :plural}
+		when 1 {You have an apple.}
+		when one {You have {$count} apple.}
+		when * {You have {$count} apples.}`
+	);
+	tap.equal(
+		message.format({
+			count: new RuntimeNumber(1),
+		}),
+		"You have an apple."
+	);
+	tap.same(
+		message.formatToParts({
+			count: new RuntimeNumber(1),
+		}),
+		[{type: "literal", value: "You have an apple."}]
 	);
 	tap.end();
 });
